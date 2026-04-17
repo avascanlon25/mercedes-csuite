@@ -1,0 +1,39 @@
+{
+  "_v": "12.2",
+  "_updated": "2026-04-17",
+  "ev": 6000,
+  "evSource": "Sportico Nov 2025 + Kurtz transaction",
+  "rev": 812,
+  "revSource": "Sportico 2024",
+  "mult": 7.4,
+  "ownership": [
+    {"name": "Mercedes-Benz AG", "pct": 33.3},
+    {"name": "INEOS", "pct": 33.3},
+    {"name": "Toto Wolff", "pct": 29},
+    {"name": "George Kurtz", "pct": 5}
+  ],
+  "rSpon": 480, "rFOM": 200, "rParent": 80, "rOther": 52,
+  "pSpon": 60, "pFOM": 25, "pParent": 10, "pOther": 5,
+  "sponsors": [
+    {"name": "PETRONAS", "est": "60-75", "tier": "Title", "since": 2010},
+    {"name": "Microsoft", "est": "40-60", "tier": "Principal", "since": 2026},
+    {"name": "INEOS", "est": "35-50", "tier": "Principal", "since": 2020},
+    {"name": "adidas", "est": "15-25", "tier": "Official", "since": 2025}
+  ],
+  "teamCap": 215,
+  "puCap": 130,
+  "excluded": "Top-3 salaries, marketing, heritage",
+  "realSpend": "350-500",
+  "ceo": "Toto Wolff",
+  "cto": "James Allison",
+  "hpp": "Hywel Thomas",
+  "driver1": "Kimi Antonelli",
+  "driver2": "George Russell",
+  "thesis": "2026+ Mercedes-AMG Petronas Valuation & Leadership Strategy — Lessons from Toto Wolff",
+  "chUrl": "https://find-and-update.company-information.service.gov.uk/company/00787446/filing-history",
+  "chNum": "00787446",
+  "fiaUrl": "https://www.fia.com/regulation/category/110",
+  "hbsUrl": "https://www.hbs.edu/faculty/Pages/item.aspx?num=63203",
+  "apiBase": "https://api.jolpi.ca/ergast/f1",
+  "gM": 8, "wacc": 9, "tg": 2.5
+}

@@ -3,40 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Mercedes-AMG Petronas F1 C-Suite Acceleration — V17. Classroom + Reference integrated teaching platform.">
-<title>Mercedes-AMG Petronas C-Suite — V17 Classroom</title>
+<meta name="description" content="Mercedes-AMG Petronas F1 C-Suite Acceleration — V20. Personal career OS for Ava Scanlon.">
+<title>Mercedes-AMG Petronas C-Suite — V20</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { background: #0A0A14; margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-  input[type="range"] {
-    -webkit-appearance: none;
-    height: 4px;
-    background: #1E293B;
-    border-radius: 2px;
-    outline: none;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #00D2BE;
-    border-radius: 50%;
-    cursor: pointer;
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    background: #00D2BE;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-  }
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: #0A0A14; }
-  ::-webkit-scrollbar-thumb { background: #2A2A38; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #3A3A48; }
+  body { background: #0A0A14; margin: 0; font-family: 'Inter', -apple-system, sans-serif; color: #E2E8F0; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #00D2BE; cursor: pointer; }
+  input[type="range"]::-moz-range-thumb { height: 16px; width: 16px; border-radius: 50%; background: #00D2BE; cursor: pointer; border: none; }
 </style>
 </head>
 <body>
@@ -87,12 +62,12 @@ const TEAMS = {
         source: "F1 official 2024 final standings (formula1.com/en/results/2024/team). 468 points. Four race wins. First time outside top 3 since 2012." },
       championship2025: { value: "P2 Constructors' (McLaren WCC, Norris WDC)", grade: "A",
         source: "F1 official 2025 final standings. McLaren back-to-back Constructors' titles 2024-2025. Mercedes finished P2 ahead of Ferrari." },
-      championship2026Current: { value: "P1 Constructors' leading after 3 of 22 races (119 pts)", grade: "A",
-        source: "F1 official 2026 standings as of April 27, 2026. Mercedes won all three opening races. Antonelli leads Drivers' Championship 72-63 over Russell. Five-week gap then Miami GP May 1-3." },
-      raceWins2026: { value: "3 of 3 (Australia: Russell, China: Antonelli, Japan: Antonelli)", grade: "A",
-        source: "Mercedes won every Grand Prix in opening three rounds of 2026 season. First Mercedes 1-2 lockouts in qualifying since 2020-era dominance." },
-      antonelliRecord: { value: "Youngest championship leader in F1 history at 19", grade: "A",
-        source: "Antonelli took title lead after winning Japanese GP March 29, 2026. Italian, born 25 August 2006. Second-youngest GP winner ever (Verstappen Spain 2016 holds record). Source: Motor Sport Magazine May 2026, F1 official." },
+      championship2026Current: { value: "P1 Constructors' leading after 4 of 22 races (180 pts) — 68 pts ahead of Ferrari", grade: "A",
+        source: "F1 official 2026 standings as of May 3, 2026 post-Miami GP. Mercedes won all 4 opening races. Antonelli leads Drivers' Championship 100-80 over Russell (20-point gap). Ferrari P2 Constructors 112 pts; McLaren P3 94 pts after Norris/Piastri 2-3 in Miami. Next round: Canadian GP May 22-24." },
+      raceWins2026: { value: "4 of 4 (Australia: Russell, China: Antonelli, Japan: Antonelli, Miami: Antonelli)", grade: "A",
+        source: "F1 official race results. Mercedes won every Grand Prix in opening four rounds. First Mercedes 1-2 lockouts in qualifying since 2020-era dominance. Norris took the Saturday Sprint at Miami (McLaren's first 2026 win) but Antonelli converted pole to Sunday race win." },
+      antonelliRecord: { value: "First driver in F1 history to win his first three pole-to-flag GPs at same events; youngest championship leader ever", grade: "A",
+        source: "F1.com / Crash.net May 3, 2026: Antonelli became first driver in F1 history to convert his first three consecutive pole positions into wins at the same events (China, Japan, Miami). Italian, born 25 August 2006. Second-youngest GP winner ever (Verstappen Spain 2016 holds record). Source: F1 official, Motor Sport Magazine May 2026." },
       currentVsHistorical: { value: "2024 financial dominance funded 2026 competitive resurgence", grade: "B",
         source: "Analyst inference: Mercedes' £120M 2024 net profit and £125M dividend distribution coincided with peak development cycle for 2026 cars. The commercial-decoupled-from-competitive thesis of 2024 was the foundation for re-aligned commercial+competitive performance in 2026." },
       staff2023: { value: 1289, unit: "avg headcount", grade: "A",
@@ -199,14 +174,16 @@ const TEAMS = {
       source: "La Gazzetta dello Sport via Newsweek August 2025 — Ferrari's first title sponsor in three years" },
 
     current2026Status: {
-      championshipPosition: { value: "P2 Constructors' (after 3 races)", grade: "A",
-        source: "F1 official 2026 standings as of April 27, 2026. Best of the rest behind Mercedes' three wins. Leclerc 2 podiums (P3 in Australia, P3 in Japan). Hamilton P3 in China — first Ferrari podium." },
+      championshipPosition: { value: "P2 Constructors' (after 4 races, 112 pts) — 68 points behind Mercedes", grade: "A",
+        source: "F1 official 2026 standings May 3, 2026 post-Miami. Leclerc P3 Drivers' (59 pts) ahead of Hamilton. Miami GP a disaster: Leclerc led early then post-race penalty (20s for repeated track limits + drive-through for unsafe condition) demoted from P3 to P6 after final-lap spin into wall. Hamilton P7 with aero damage from Lap-1 Colapinto contact." },
       pace: { value: "~25 hp behind Mercedes; ~0.5s qualifying gap", grade: "B",
-        source: "Motorsport IT April 2026; F1 Oversteer reporting. Engine upgrade not expected until July 2026 race window." },
-      miamiUpgrade: { value: "'Macarena' rotating wing debuts, ~50% of car redesigned", grade: "B",
-        source: "Motorsport IT April 26, 2026: Ferrari testing 'Macarena' rotating rear wing concept at Monza filming day. Loic Serra design team targets 'true potential' of 2026 concept package debuting Miami." },
-      titleStrategy: { value: "Internal target 2027, but Miami upgrade could change calculus", grade: "B",
-        source: "Motorsport IT, F1 Oversteer April 2026 — Vasseur's 2025-stop-development decision targeting 2026 paid off in early-season pace; if Miami package closes Mercedes gap meaningfully, 2026 title fight returns to picture." }
+        source: "Motorsport IT April 2026; F1 Oversteer reporting. ADUO upgrade now cleared for Canada GP debut — see ADUO entry." },
+      macarenaWing: { value: "Macarena rotating rear wing did not deliver Miami breakthrough as hoped", grade: "B",
+        source: "Miami GP result: Ferrari brought 'complete' 2026 car with ~50% redesign and Macarena wing but performance was middle of front group, not Mercedes-challenging. Leclerc made early progress but car damage and penalties ended weekend with single point." },
+      aduoClearance: { value: "FIA cleared Ferrari ICE upgrade under ADUO — debuts Canadian GP onwards", grade: "A",
+        source: "Read Motorsport / Scuderiafans April 1, 2026 (confirmed May 8 by WMSC). Ferrari 25hp deficit qualifies under ADUO 2% threshold. Upgrade targets thermal side of ICE; switching to slightly larger batteries. Plus one homologation upgrade in 2027. Ferrari's Enrico Gualtieri confirmed 'comfortable with the process.'" },
+      titleStrategy: { value: "Internal target 2027 confirmed; 2026 now damage-limitation", grade: "B",
+        source: "After Miami performance well below expectations and Mercedes extending lead, Ferrari shifting public messaging back to 2027 as primary title window. ADUO upgrade gives chance to consolidate P2 rather than challenge for WCC." }
     }
   },
 
@@ -249,12 +226,12 @@ const TEAMS = {
     drivers2026: ["Lando Norris (2025 WDC)", "Oscar Piastri"],
 
     current2026Status: {
-      championshipPosition: { value: "P3 Constructors' (after 3 races)", grade: "A",
-        source: "F1 official 2026 standings as of April 27, 2026. Defending Constructors' champions struggling out of gate." },
-      seasonStruggle: { value: "Slow start — both DNS in China, Piastri P2 in Japan was first podium of 2026", grade: "A",
-        source: "Sky Sports F1 / GPFans April 26, 2026: 'huge push to the final race of last season ultimately yielded a double world title' but development pivoted late, leaving 2026 car needing significant updates." },
-      miamiUpgrades: { value: "Major upgrade package planned for Miami", grade: "B",
-        source: "GPFans April 27, 2026: 'completely new car' rumored for Miami; team boss Stella signals 'growing belief they can close gap to Mercedes.'" }
+      championshipPosition: { value: "P3 Constructors' (after 4 races, 94 pts) — 18 pts behind Ferrari, 86 behind Mercedes", grade: "A",
+        source: "F1 official 2026 standings May 3, 2026 post-Miami. Defending Constructors' champions closing gap after best 2026 weekend. McLaren scored 48 points across Miami weekend (Sprint + GP), nearly the maximum 58 on offer." },
+      miamiBreakthrough: { value: "Norris won Saturday Sprint (first non-Mercedes win of 2026) plus P2 GP; Piastri P3 — first double podium of season", grade: "A",
+        source: "F1.com / GPFans May 3, 2026: Norris took pole and converted to controlled Sprint victory, Piastri P2 in Sprint. Sunday GP: Norris P2 just 3.2s behind Antonelli after closing rapidly through pit cycle; Piastri P3 completed first 2026 double podium. Strongest McLaren weekend of new era." },
+      seasonStruggle: { value: "Slow start (both DNS in China, no Mercedes-rivalling pace until Miami) now reversing", grade: "A",
+        source: "Sky Sports F1 May 3, 2026: 'McLaren came close to the maximum, scoring 48 points across the weekend in a stunning performance considering where they left off before F1's spring break.' Suggests 2025 WCC champions back in the title conversation." }
     }
   },
 
@@ -303,14 +280,16 @@ const TEAMS = {
     drivers2026: ["Max Verstappen", "Isack Hadjar (promoted from Racing Bulls)"],
 
     current2026Status: {
-      championshipPosition: { value: "P6 Constructors' (after 3 races) — 16 points, 119 behind Mercedes", grade: "A",
-        source: "F1 official 2026 standings as of April 27, 2026. Only 2 points ahead of sister team Racing Bulls. Worst start to a season for Red Bull since pre-Vettel era." },
-      chassisProblem: { value: "Underdeveloped chassis after late 2025 development push for Verstappen WDC fight", grade: "A",
-        source: "F1.com / Sky Sports April 2026: 'decision to develop their car deep into 2025, as Max Verstappen launched a remarkable comeback in the Drivers' Championship fight, only to lose out on the final race, has put Red Bull on the back foot in 2026.'" },
-      puPerformance: { value: "Red Bull-Ford PU performing well — reliability and pace strong", grade: "B",
-        source: "F1.com April 2026: 'their debut F1 power unit, created in conjunction with Ford, has been a revelation both in terms of reliability and performance.' Strong against expectation given first-year manufacturer status." },
-      verstappenFrustration: { value: "Public criticism of 2026 regulations; demanding 'bigger changes for 2027'", grade: "A",
-        source: "Motorsport.com April 22, 2026 — Verstappen most vocal critic of new regs. Wolff response: 'scalpel not baseball bat.'" }
+      championshipPosition: { value: "P4 Constructors' (after 4 races, ~30 pts) — moved up from P6 after strong Miami", grade: "A",
+        source: "F1 official 2026 standings May 3, 2026. Verstappen recovered from Lap-1 spin at Miami to P5 finish; received 5s post-race penalty for crossing pit-exit line but retained P5. Hadjar disqualified from qualifying for technical infringement, retired from race. Sister team Racing Bulls now further behind." },
+      chassisProblem: { value: "Underdeveloped chassis improving but cultural exodus continues to drain technical depth", grade: "A",
+        source: "F1.com / Sky Sports / GPFans April-May 2026: late-2025 development push for Verstappen WDC fight left 2026 chassis underdeveloped. Recovery underway but slow. May 8, 2026 reports: chief designer Craig Skinner 'shown the door' (per Dutch journalist Erik van Haren on De Telegraaf F1 podcast), continuing the post-Newey staff exodus." },
+      staffExodus: { value: "Material 2023-2026 senior departures — Newey, Horner, Wheatley, Marshall, Courtenay, Skinner, Lambiase, plus Marko, Schack", grade: "A",
+        source: "GPFans May 11, 2026: 'Red Bull have lost not just Newey, but also chief engineering officer Rob Marshall, sporting director Jonathan Wheatley (Audi), head of race strategy Will Courtenay (McLaren), CEO Christian Horner, advisor Helmut Marko, chief designer Craig Skinner, head of racing Gianpiero Lambiase (McLaren no later than 2028).' Cultural / talent risk material to Red Bull's 2026-2028 competitive position." },
+      puPerformance: { value: "Red Bull-Ford PU performing well — reliability and pace strong; Mercedes ICE benchmark, RBPT 'fractionally clear' of other rivals", grade: "B",
+        source: "PlanetF1 May 8, 2026: 'paddock whispers suggest Mercedes and Red Bull Powertrains are expected to be the top performers, with the Brixworth-built HPP power unit anticipated to be fractionally clear of the RBPT.' Strong achievement given RBPT first-year status." },
+      verstappenFrustration: { value: "Continued public criticism of 2026 regulations; demanding 'bigger changes for 2027'", grade: "A",
+        source: "Motorsport.com April 22, 2026 — Verstappen most vocal critic of new regs. Wolff response: 'scalpel not baseball bat.' Verstappen called cars 'anti-racing' and 'like Formula E on steroids.'" }
     }
   },
 
@@ -540,6 +519,38 @@ const FIA_REGS = {
     commercialImplications: "Two cancelled rounds reduce sponsor exposure for race-specific deals (track-side advertising, hospitality). Concorde Agreement prize money pool unaffected — distributed on full 22-race results. Promoter fees for Bahrain and Saudi Arabia not collected by FOM for 2026 (estimated combined $80-100M loss to Liberty Media). No anti-dilution implications for 2026.",
     source: "F1 official 14 March 2026 (formula1.com); Sky Sports F1; Al Jazeera; Motorsport.com.",
     grade: "A"
+  },
+
+  aduo2026: {
+    title: "Additional Development and Upgrade Opportunities (ADUO) — 2026 PU performance balancing",
+    purpose: "Catch-up mechanism allowing struggling PU manufacturers in-season ICE upgrades. NOT designed as a leapfrog mechanism (Wolff insistence).",
+    eligibilityThreshold: "ICE Performance Index ≥2% below benchmark = one homologation upgrade (2026 + 2027). ≥4% behind = two homologation upgrades each year. ≥10% behind = max test allowance 230 hours + $11M cost cap relief + one-off $8M 2026 development budget allowance.",
+    governance: "FIA Technical Regulations Appendix 4 Article 4; ratified by WMSC.",
+    originalSchedule: "Reviews after races 6, 12, and 18 of original 24-race calendar.",
+    revisedSchedule: "After 22-race calendar adjustment: Period 1 reviews after Round 5 (Canada, May 24); Period 2 after Round 11 (Hungary); Period 3 after Round 18 (Mexico). Approved May 8, 2026 by WMSC.",
+    expectedBeneficiaries: [
+      { manufacturer: "Honda HRC (Aston Martin works)", deficit: ">10% behind benchmark", note: "Worst position; supplies Aston Martin only; major early-season reliability issues" },
+      { manufacturer: "Audi (Sauber/Audi works)", deficit: ">1s lap time deficit on ICE performance alone", note: "First-year manufacturer; supplies own works team only" },
+      { manufacturer: "Ferrari", deficit: "~25hp behind Mercedes (~2-3% range)", note: "Cleared May 8 2026 — upgrade debuts Canada onwards; thermal-side ICE upgrade + larger batteries" }
+    ],
+    mercedesPosition: "Mercedes HPP is the benchmark ICE. As the leading manufacturer, Mercedes does NOT receive ADUO. Wolff publicly: 'ADUO was meant as a catch-up mechanism and not as a leapfrog mechanism' — pushing FIA for strict application.",
+    riskToMercedes: "By granting upgrades to Ferrari, Audi, and Honda, FIA enables them to close performance gap. If applied as 'leapfrog' rather than 'catch-up,' could materially alter pecking order in H2 2026. Mercedes monitoring closely.",
+    source: "GPFans / Motorsport.com / PlanetF1 / Sky Sports / Read Motorsport (May 8, 2026 WMSC ratification). Sky Sports F1 'ADUO explainer' May 2026.",
+    grade: "A"
+  },
+
+  powerSplitProposal2027: {
+    title: "Proposed 60/40 ICE/electric power split for 2027+",
+    proposedDate: "May 9, 2026 (FIA statement, 'agreed in principle' subject to technical group review)",
+    currentSplit: "2026 regulations specify roughly 50/50 ICE/electric (350 kW each, approximately)",
+    proposedSplit: "ICE increased by 50 kW; electric reduced by 50 kW. Net 400 kW ICE / 300 kW electric. FIA describes this as '60/40' though mathematically it's closer to 57/43.",
+    rationale: "Address driver complaints about 'Mario Kart' racing and energy management dominating qualifying. Reduce lift-and-coast on straights. Stella (McLaren) had called for hardware changes by 2028; this is the first regulatory response.",
+    timeline: "Earliest implementation 2027. Final package contingent on technical groups (PU manufacturers + teams). FIA noted 'further detailed discussion required.'",
+    wolffPosition: "Wolff opposed further changes this soon. Post-Miami: 'If there's one single person that complains about the race today, I think they should hide, honestly.' Argues 2026 regulations are working as intended after Miami tweaks.",
+    longTerm2030Plus: "Wolff publicly supports V8 + electric boost (~1,200 hp) for 2030-2031 next regulatory reset. FIA president has hinted at naturally aspirated direction. This would be the basis of the 2031-2035 Concorde negotiation.",
+    materialityToMercedes: "If implemented, narrows the differentiation of Mercedes' superior electric architecture (which is the source of much of HPP's 2026 advantage). Mercedes will fight to delay or scope the change.",
+    source: "Motorsport.com May 9, 2026; FerVogear May 5, 2026; TheJudge13 May 9, 2026; F1 official statements.",
+    grade: "B"
   },
 
   sectionD: {
@@ -2906,7 +2917,6 @@ function AnswerCard({ qa, num }) {
 // ============================================================================
 // APP SHELL — brings every view together
 // ============================================================================
-
 
 
 // ===== 07_lesson_engine.js =====
@@ -5531,7 +5541,7 @@ ALL_LESSONS.push(...LESSONS_AR);
 
 // ===== 13_weekly_news.js =====
 // ============================================================================
-// V18 WEEKLY NEWS — F1 news organized by week with materiality and source links
+// V20 WEEKLY NEWS — F1 news organized by week with materiality and source links
 // ============================================================================
 // Purpose: integrates the "read F1 news weekly" routine item directly into the
 // platform. Each week is a discrete entry. Each story is graded for materiality
@@ -5539,6 +5549,83 @@ ALL_LESSONS.push(...LESSONS_AR);
 // ============================================================================
 
 const WEEKLY_NEWS = [
+  {
+    weekOf: "2026-05-05",
+    weekLabel: "Week of May 5, 2026 — Post-Miami GP",
+    summary: "Antonelli's third straight GP win extends Mercedes lead to 68 points over Ferrari. FIA ratifies ADUO timetable change for Canada. F1 proposes 60/40 power split shift for 2027+. Red Bull cultural exodus continues with chief designer dismissal. Canada GP weekend May 22-24.",
+    stories: [
+      {
+        id: "antonelli-wins-miami",
+        title: "Antonelli wins Miami GP — third consecutive win extends Mercedes' Constructors' lead to 68 points",
+        category: "Race Results",
+        materiality: "high",
+        date: "2026-05-03",
+        body: "Andrea Kimi Antonelli won the 2026 Miami Grand Prix on Sunday May 3, holding off McLaren's Lando Norris by 3.264 seconds in a chaotic 57-lap race brought forward 3 hours due to forecasted thunderstorms. Antonelli became the first driver in F1 history to convert his first three consecutive pole positions into wins at the same events (China, Japan, Miami). The 19-year-old now leads the Drivers' Championship with 100 points — 20 ahead of teammate Russell (80) and 41 ahead of Leclerc (59). Mercedes leads the Constructors' Championship with 180 points, 68 ahead of Ferrari (112). McLaren scored 48 points across the Miami weekend (Norris won Saturday's Sprint plus P2 in GP; Piastri P3 — first 2026 double podium), moving McLaren to 94 pts P3. Verstappen recovered from a Lap-1 spin to P5; Russell P4 then P4 final after Leclerc disaster (20s track-limits penalty + drive-through dropped him from P3 to P6 after final-lap spin into the wall). Ferrari's Macarena rotating wing debut did not deliver the breakthrough hoped for.",
+        sources: [
+          { label: "F1 official race report — Antonelli wins thrilling Miami GP", url: "https://www.formula1.com/en/latest/article/antonelli-wins-thrilling-miami-grand-prix-from-norris-and-piastri.2bxaKuYKJjxlXx8KOJf7lc" },
+          { label: "Sky Sports F1 — Miami GP returns talk of 'new championship'", url: "https://www.skysports.com/f1/news/12433/13534965/f1-returns-at-miami-gp-with-talk-of-new-championship-starting-with-car-upgrades-expected-as-field-bids-to-catch-mercedes" },
+          { label: "Total Motorsport — championship standings after Miami", url: "https://www.total-motorsport.com/f1-2026-driver-team-standings-after-miami/" },
+          { label: "Wikipedia 2026 Miami GP detailed race timeline", url: "https://en.wikipedia.org/wiki/2026_Miami_Grand_Prix" }
+        ],
+        thesisRelevance: "This is Mercedes' fourth consecutive win to open 2026 — their first such opening streak since 2014. Commercial significance: each P1 finish triggers approximately $7-10M of marginal sponsorship performance-trigger bonuses across the portfolio (Petronas, Microsoft, INEOS commercial terms). Combined with the ~$140M baseline WCC pool projection at P1, Mercedes' 2026 commercial revenue trajectory is materially above 2024's £636M record. Your DCF model should now consider 'Mercedes wins 2026 WCC' as the base case, not the upside case. Update the championship probability inputs in your scenarios accordingly."
+      },
+      {
+        id: "fia-aduo-canada",
+        title: "FIA brings forward ADUO checkpoint to Canada GP — Ferrari, Audi, Honda cleared for upgrades",
+        category: "Regulatory",
+        materiality: "high",
+        date: "2026-05-08",
+        body: "The World Motor Sport Council on Thursday May 8 ratified changes to the Additional Development and Upgrade Opportunities (ADUO) timetable. Originally set for review after races 6, 12, and 18 of the planned 24-race calendar, the new schedule reflects the 22-race reality: first ADUO checkpoint now occurs after Round 5 (Canadian GP, May 24), second after Round 11 (Hungary), third after Round 18 (Mexico). Additionally, the FIA expanded the safety net for the most-behind manufacturers: ≥10% deficit now triggers 230 hours of additional test bench time (up from 190), $11M cost cap relief (up from $8M), plus a one-off $8M 2026 development budget allowance. Ferrari's ICE upgrade was cleared April 1 and will debut from Canada onwards — they qualify under the ≥2% threshold (25hp deficit to Mercedes benchmark). Honda (Aston Martin works) is expected to qualify at the highest tier (>10%). Audi likely also qualifies. Mercedes HPP is the benchmark and is NOT eligible — Wolff publicly: 'The principle of the ADUO was to allow teams that were on the back foot in terms of the power unit to catch up, but not to leapfrog.'",
+        sources: [
+          { label: "GPFans — FIA announces ADUO change which could hamper Mercedes", url: "https://www.gpfans.com/en/f1-news/1083337/fia-f1-2026-aduo-change-mercedes-power-unit-rules/" },
+          { label: "Motorsport.com — Honda gets extra help after FIA tweaks", url: "https://www.motorsport.com/f1/news/fia-tweaks-aduo-regulations-aston-martin-honda/10819071/" },
+          { label: "PlanetF1 — F1 engine rules changed as FIA expands ADUO", url: "https://www.planetf1.com/news/fia-f1-engine-rules-aduo-struggling-manufacturers-audi-honda" },
+          { label: "Sky Sports F1 — ADUO explainer", url: "https://www.skysports.com/f1/news/12433/13534807/aduo-in-f1-what-is-the-engine-regulation-that-could-define-course-of-2026-formula-1-season" }
+        ],
+        thesisRelevance: "This is the most important regulatory development for your thesis since the cost cap was introduced. The ADUO mechanism creates a structural performance-balancing tool that didn't exist in earlier F1 eras. As Mercedes finance analyst, you need to model: (1) how much performance benefit Ferrari/Honda/Audi get from their upgrades — Mercedes will fall back to the field by H2 2026 if applied liberally; (2) the cost cap implications — Honda's $11M cap relief means Aston Martin's parent budget can effectively grow; (3) the precedent. ADUO will be a permanent feature of 2026+ regulations. Add this to your scenario register as a recurring season variable: 'Mercedes loses pace advantage to ADUO-enabled rivals.' Probability of material competitive impact by H2 2026: 35-55%."
+      },
+      {
+        id: "fia-60-40-proposal",
+        title: "FIA agrees in principle to shift 2027+ power unit toward 60/40 ICE/electric split",
+        category: "Regulatory",
+        materiality: "high",
+        date: "2026-05-09",
+        body: "The FIA announced Friday May 9 that the 2027 power unit regulations will be revised to shift more power back to the internal combustion engine: ICE output increased by 50 kW, electric component reduced by 50 kW, producing a net 400 kW ICE / 300 kW electric split. The FIA characterizes this as '60/40' though mathematically it's closer to 57/43. The change is 'agreed in principle' subject to final review by technical groups comprising teams and PU manufacturers. Rationale: address driver complaints about 'Mario Kart' racing and energy management dominating qualifying. McLaren's Andrea Stella had publicly called for hardware regulation changes by 2028; this is the first formal regulatory response. Wolff publicly opposed further changes this soon, telling reporters after Miami: 'If there's one single person that complains about the race today, I think they should hide, honestly.' Long-term, Wolff has separately publicly supported a return to V8 + electric boost (~1,200 hp) for the 2030-2031 regulatory reset.",
+        sources: [
+          { label: "Motorsport.com — Wolff thinks 2026 critics should hide after Miami", url: "https://www.motorsport.com/f1/news/why-toto-wolff-thinks-f1-2026-critics-should-hide-after-miami/10818053/" },
+          { label: "FerVogear — Wolff backs V8 + electric boost for 2030-2031", url: "https://fervogear.com/2026/05/05/news/f1/mercedes-mega-f1-rules/" },
+          { label: "TheJudge13 — analysis of the 60/40 proposal", url: "https://thejudge13.com/2026/05/09/the-2026-power-unit-con-why-the-fias-latest-f1-engine-proposal-changes-nothing/" }
+        ],
+        thesisRelevance: "This is signal for your 2031+ Concorde scenario. If 2027 sees this 60/40 adjustment, then by 2030-2031 the regulatory framework will likely be substantially rewritten, and the 2031+ Concorde will be negotiated against a different technical backdrop than the current 2026 cycle. For Mercedes specifically: a shift away from heavy electrification potentially narrows the differentiation of HPP's electric architecture (which is the source of much of the 2026 advantage). Mercedes will fight this. Your thesis chapter on 'regulatory durability' should treat the 2026 framework as substantially less durable than initially designed."
+      },
+      {
+        id: "red-bull-skinner-exit",
+        title: "Red Bull chief designer Craig Skinner 'shown the door' — cultural exodus continues",
+        category: "Personnel",
+        materiality: "medium",
+        date: "2026-05-08",
+        body: "Dutch journalist Erik van Haren of De Telegraaf claimed on his F1 podcast May 8 that Red Bull chief designer Craig Skinner did not leave the team voluntarily in February 2026 — he was 'shown the door' by team principal Laurent Mekies. Red Bull's official press release described it as a voluntary departure after 20 years. This continues a remarkable run of senior departures since Adrian Newey's 2024 exit: Christian Horner (CEO/TP, dismissed July 2025), Jonathan Wheatley (sporting director, to Audi as TP), Rob Marshall (chief engineering officer, to McLaren), Will Courtenay (chief strategist, to McLaren), Helmut Marko (advisor), Ole Schack (long-serving technician, retiring after 2026), Gianpiero Lambiase (Verstappen's race engineer, to McLaren as Chief Racing Officer no later than 2028). Red Bull sits P4 in 2026 Constructors despite a strong Red Bull-Ford PU.",
+        sources: [
+          { label: "GPFans — Red Bull problems beginning to look cultural", url: "https://www.gpfans.com/en/f1-news/1083472/red-bull-f1-culture-problem-mass-staff-exit/" },
+          { label: "GPFans — Skinner 'kicked out' in shock exit", url: "https://www.gpfans.com/en/f1-news/1083239/f1-red-bull-craig-skinner-chief-designer-resigned-sacked-laurent-mekies/" }
+        ],
+        thesisRelevance: "Red Bull's organizational disintegration is your most important competitor signal of 2026. For Mercedes, this is opportunity and risk: opportunity to recruit displaced talent and to capitalize on Red Bull's competitive weakness during the 2026-2028 window; risk that the Red Bull-Ford program eventually stabilizes with their strong PU as the foundation. Your scenario register entry on 'Red Bull post-Verstappen' should be elevated in probability — if Verstappen continues to publicly criticize Red Bull cars as 'anti-racing,' a 2027-2028 Verstappen departure becomes plausible. Mercedes commercial team should already be modeling this contingency."
+      },
+      {
+        id: "wolff-defends-regulations",
+        title: "Wolff: '2026 critics should hide' after Miami GP success — defends regulatory framework",
+        category: "Politics",
+        materiality: "medium",
+        date: "2026-05-03",
+        body: "Speaking after Antonelli's Miami GP win, Toto Wolff strongly defended the 2026 regulation package: 'If there's one single person that complains about the race today, I think they should hide, honestly.' The comments came amid continued criticism from Verstappen and others that the 2026 cars are 'anti-racing.' Wolff has positioned Mercedes as the defender of the new technical framework — appropriate for the dominant manufacturer — while privately pushing back hard against ADUO interpretations and the 60/40 power-split proposal. Earlier in 2026, Wolff was the loudest voice for 'scalpel not baseball bat' regulatory changes. His Miami remarks suggest Mercedes is now satisfied with the regulatory equilibrium post-tweaks.",
+        sources: [
+          { label: "Motorsport.com — Wolff thinks F1 2026 critics 'should hide'", url: "https://www.motorsport.com/f1/news/why-toto-wolff-thinks-f1-2026-critics-should-hide-after-miami/10818053/" },
+          { label: "TheJudge13 — analysis of Wolff's 'road relevance' agenda", url: "https://thejudge13.com/2026/05/10/is-mercedes-hijacking-f1-the-secret-behind-toto-wolffs-road-relevance-agenda/" }
+        ],
+        thesisRelevance: "Wolff's public communication is a deliberate political instrument. As Mercedes finance analyst, you will read this as a signal: Mercedes is comfortable enough with current regulations to take public ownership of defending them, but unhappy enough with ADUO/60-40 proposals to maintain ongoing pressure through technical channels. Your interview-vault answer on 'how does political dimension of F1 regulation affect Mercedes commercial strategy' should reference this exact week — Wolff making public statements that align with Mercedes' commercial interests in a stable, predictable framework where they hold the advantage."
+      }
+    ]
+  },
   {
     weekOf: "2026-04-21",
     weekLabel: "Week of April 21, 2026",
@@ -7120,6 +7207,8 @@ if (typeof ALL_LESSONS !== 'undefined') {
 }
 
 
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
 </script>
 </body>
 </html>

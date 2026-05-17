@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Mercedes-AMG Petronas F1 C-Suite Acceleration — V20. Personal career OS for Ava Scanlon.">
-<title>Mercedes-AMG Petronas C-Suite — V20</title>
+<meta name="description" content="Mercedes-AMG Petronas F1 C-Suite Acceleration — V21. Personal career OS for Ava Scanlon.">
+<title>Mercedes-AMG Petronas C-Suite — V21</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -3002,6 +3002,10 @@ function LessonViewer({ lesson, onComplete, onBack, onNavigate }) {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showSources, setShowSources] = useState(false);
+  const [showQA, setShowQA] = useState(false);
+  const [askMode, setAskMode] = useState(false);
+  const [askText, setAskText] = useState('');
+  const [askSaved, setAskSaved] = useState(false);
 
   const answerQuiz = (qIdx, optionIdx) => {
     if (quizSubmitted) return;
@@ -3127,6 +3131,73 @@ function LessonViewer({ lesson, onComplete, onBack, onNavigate }) {
               )
             )
           ))
+        )
+      ),
+
+      // Q&A BANK — pre-written answers to common questions for this lesson
+      lesson.qa && lesson.qa.length > 0 && React.createElement('div', { className: 'mt-4' },
+        React.createElement('button', {
+          onClick: () => setShowQA(!showQA),
+          className: 'text-sm text-violet-400 hover:text-violet-300 font-semibold'
+        }, (showQA ? '▼ ' : '▶ ') + 'Common questions about this lesson (' + lesson.qa.length + ')'),
+        showQA && React.createElement('div', { className: 'mt-3 bg-slate-900/40 border border-violet-500/20 rounded-lg p-4 space-y-4' },
+          React.createElement('div', { className: 'text-xs text-slate-400 italic mb-2' },
+            'Browse pre-written answers to common questions. If your question is not here, use the Ask Claude form below.'),
+          ...lesson.qa.map((item, i) => React.createElement('div', {
+            key: i,
+            className: 'pb-3 border-b border-slate-800/60 last:border-0 last:pb-0'
+          },
+            React.createElement('div', { className: 'text-sm font-semibold text-violet-300 mb-2' },
+              'Q: ' + item.q),
+            React.createElement('div', { className: 'text-sm text-slate-200 leading-relaxed pl-3 border-l-2 border-violet-500/40' },
+              item.a)
+          ))
+        )
+      ),
+
+      // ASK CLAUDE — question queue feature
+      React.createElement('div', { className: 'mt-4' },
+        React.createElement('button', {
+          onClick: () => setAskMode(!askMode),
+          className: 'text-sm text-fuchsia-400 hover:text-fuchsia-300 font-semibold'
+        }, (askMode ? '▼ ' : '▶ ') + 'Ask Claude a question about this lesson'),
+        askMode && React.createElement('div', { className: 'mt-3 bg-slate-900/40 border border-fuchsia-500/20 rounded-lg p-4' },
+          React.createElement('div', { className: 'text-xs text-slate-400 italic mb-3' },
+            'Type your question. It saves locally and appears in the Question Queue tab. Export the queue to clipboard, paste into your Claude chat, and Claude will answer in conversation.'),
+          React.createElement('textarea', {
+            value: askText,
+            onChange: (e) => { setAskText(e.target.value); setAskSaved(false); },
+            placeholder: 'Type your question here...',
+            rows: 4,
+            className: 'w-full p-3 bg-slate-950 border border-slate-700 rounded text-sm text-slate-200 placeholder-slate-500 resize-y'
+          }),
+          React.createElement('div', { className: 'flex items-center gap-3 mt-3' },
+            React.createElement('button', {
+              onClick: () => {
+                if (!askText.trim()) return;
+                try {
+                  const existing = JSON.parse(localStorage.getItem('v21_question_queue') || '[]');
+                  existing.push({
+                    id: Date.now(),
+                    lessonId: lesson.id,
+                    lessonTitle: lesson.title,
+                    question: askText.trim(),
+                    createdAt: new Date().toISOString(),
+                    answered: false
+                  });
+                  localStorage.setItem('v21_question_queue', JSON.stringify(existing));
+                  setAskSaved(true);
+                  setAskText('');
+                } catch (e) {
+                  console.error('Failed to save question:', e);
+                }
+              },
+              disabled: !askText.trim(),
+              className: 'px-4 py-2 bg-fuchsia-500 hover:bg-fuchsia-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 text-sm font-semibold rounded'
+            }, 'Save question to queue'),
+            askSaved && React.createElement('div', { className: 'text-xs text-emerald-400' },
+              '✓ Saved. Check the Question Queue tab to export.')
+          )
         )
       ),
 
@@ -4757,6 +4828,7 @@ function App() {
     { id: 'checker', label: 'Source Checker', icon: '✓' },
     { id: 'predictions', label: 'Predictions', icon: '◐' },
     { id: 'scenarios', label: 'Scenarios', icon: '⟿' },
+    { id: 'queue', label: 'Question Queue', icon: '?' },
     { id: 'course', label: 'Roadmap', icon: '↗' },
     { id: 'interview', label: 'Interview Vault', icon: '◎' }
   ];
@@ -4773,6 +4845,7 @@ function App() {
     checker: React.createElement(SourceChecker),
     predictions: React.createElement(PredictionsTracker),
     scenarios: React.createElement(ScenarioRegister),
+    queue: React.createElement(QuestionQueue),
     course: React.createElement(CourseRoadmap),
     interview: React.createElement(InterviewVault)
   };
@@ -5549,6 +5622,96 @@ ALL_LESSONS.push(...LESSONS_AR);
 // ============================================================================
 
 const WEEKLY_NEWS = [
+  {
+    weekOf: "2026-05-12",
+    weekLabel: "Week of May 12, 2026 — Brown vs Mercedes-Alpine, Verstappen at Nürburgring",
+    summary: "McLaren CEO Zak Brown formally writes 6-page letter to FIA President urging A/B team co-ownership ban — explicitly triggered by Mercedes reportedly pursuing 24% stake in Alpine via Otro Capital. Wolff denies 'satellite team' intent. Verstappen makes Nürburgring 24 Hours debut driving Mercedes-AMG GT3 for his own Verstappen Racing team — sold-out crowd, Red Bull-backed yet Mercedes-branded. Ben Sulayem reveals Cadillac entry political battle backstory. V8 engine debate intensifies. Audi damage-control after Miami disaster. Canada GP next weekend (May 22-24).",
+    stories: [
+      {
+        id: "brown-fia-ab-teams-letter",
+        title: "McLaren's Zak Brown sends 6-page letter to FIA President demanding A/B team co-ownership ban — Mercedes-Alpine speculation the trigger",
+        category: "Politics / Ownership",
+        materiality: "high",
+        date: "2026-05-14",
+        body: "McLaren CEO Zak Brown delivered a formal 6-page letter to FIA President Mohammed Ben Sulayem this week urging prohibition of common team ownership structures and tighter regulation of strategic alliances. The trigger: reports that Mercedes is pursuing the 24% stake in Alpine F1 currently held by investment fund Otro Capital. Brown cited two specific recent incidents to argue sporting integrity is being compromised: the 2024 Singapore GP fastest-lap point Ricciardo (Racing Bulls) took from Norris to benefit Verstappen's title fight, and Miami GP where Racing Bulls' Lawson was instructed to move aside for Verstappen. Brown's letter referenced UEFA multi-club ownership rules (independent trusts, structural firewalls) as a possible regulatory model. Wolff publicly responded by denying any 'satellite team' intent: 'No, we don't want a junior team,' he told L'Équipe when asked about the Alpine purchase rumor. Ben Sulayem had already acknowledged at Miami: 'I do believe that owning two teams is not the right way — this is my personal point of view, but we are looking into that because it's a complicated area.' The 2026-2030 Concorde Agreement signed December 2025 did NOT address multi-team ownership — the most significant loophole in the new framework.",
+        sources: [
+          { label: "PlanetF1 — Brown sends FIA letter over A/B team concerns", url: "https://www.planetf1.com/news/zak-brown-fia-letter-f1-team-ownership-links" },
+          { label: "The Race — Brown escalates team alliance crusade in letter to FIA", url: "https://www.the-race.com/formula-1/brown-escalates-team-alliance-crusade-in-letter-to-fia/" },
+          { label: "Motorsport.com — Brown takes FIA fight over Mercedes-Alpine talks public", url: "https://www.motorsport.com/f1/news/zak-brown-takes-fia-fight-over-mercedes-alpine-f1-talks-public/10820811/" },
+          { label: "F1i — Brown takes aim at A/B teams in formal letter to FIA", url: "https://f1i.com/news/564375-zak-brown-takes-aim-at-a-b-teams-in-f1-in-formal-letter-to-fia.html" },
+          { label: "TheJudge13 — Why F1's new Concorde failed its biggest test", url: "https://thejudge13.com/2026/05/16/kicking-the-can-why-f1s-new-concorde-agreement-failed-its-biggest-test/" },
+          { label: "RacingNews365 — Brown writes to FIA over Red Bull model", url: "https://racingnews365.com/zak-brown-writes-letter-to-fia-over-controversial-red-bull-f1-model" }
+        ],
+        thesisRelevance: "This is directly relevant to your Mercedes capstone in three ways. (1) Mercedes is reportedly looking to acquire 24% of Alpine — if this proceeds, Mercedes' F1 platform expands from one team + HPP to TWO teams + HPP, with strategic alignment implications worth tens of millions annually in personnel mobility, data sharing, voting weight. (2) Wolff's public denial of 'satellite team' intent is the cover story — the actual structural value of an Alpine stake is exactly the A/B dynamic Brown is trying to ban. Wolff is playing for time before regulatory closure. (3) Your Mercedes Graduate Programme interview will almost certainly include questions on this. Be prepared with the financial logic (24% × Alpine valuation ~$1B = ~$240M investment for partial control + customer engine continuity + personnel pipeline) AND the political logic (Wolff's public/private mismatch is the Wolff playbook in action). Add to your Scenario Register as 'Mercedes acquires Alpine stake — partial' with 40-55% probability over 12 months."
+      },
+      {
+        id: "verstappen-nurburgring-mercedes-amg",
+        title: "Verstappen debuts at Nürburgring 24 Hours driving a Mercedes-AMG GT3 — Red Bull's star in silver, sold-out crowd",
+        category: "Cross-Brand",
+        materiality: "medium",
+        date: "2026-05-16",
+        body: "Max Verstappen began his debut at the Nürburgring 24 Hours race today (Saturday May 16) driving the #3 Mercedes-AMG GT3 EVO entered by his own team, Verstappen Racing. The car qualified 4th on the grid after co-driver Dani Juncadella set 8:12.005 in Top Qualifying 3. His teammates: Juncadella (Spanish), Jules Gounon (Andorran-French), Lucas Auer (Austrian — and notably Gerhard Berger's nephew, intertwined with Mercedes DTM history). The 24-hour endurance race uses the combined Nordschleife + GP-Strecke for a 25km lap. For the first time in event history, weekend tickets sold out — driven by Verstappen's presence. The Red Bull-backed driver racing in Mercedes-branded hardware is structurally jarring: Verstappen's primary career is Red Bull Racing F1, but his personal racing team chose Mercedes-AMG GT3 chassis for the prestige Nordschleife endurance program. Verstappen has publicly described F1's 2026 regulations as 'anti-racing' and 'Mario Kart' — making the Nürburgring 'side quest' (ESPN's framing) the venue where he genuinely enjoys racing.",
+        sources: [
+          { label: "ESPN — Max Verstappen at Nürburgring 24 Hours 2026 guide", url: "https://www.espn.com/f1/story/_/id/48700888/max-verstappen-nurburgring-24-hours-2026-race-session-start-s-how-watch-full-schedule" },
+          { label: "GPFans — Verstappen Nürburgring start time and live stream", url: "https://www.gpfans.com/en/f1-news/1083797/nurburgring-24-hours-start-time-watch-live-stream-2026-max-verstappen/" },
+          { label: "Motorsport.com — Verstappen to start debut from fourth", url: "https://www.motorsport.com/NLS/news/-nurburgring-24-hours-verstappen-to-start-debut-from-fourth/10820993/" },
+          { label: "Motorsport.com — Verstappen's biggest rivals at Nürburgring", url: "https://www.motorsport.com/NLS/news/max-verstappens-biggest-rivals-in-the-2026-nurburgring-24-hours/10820085/" }
+        ],
+        thesisRelevance: "Two threads of relevance. (1) Mercedes-AMG brand value: Verstappen's selection of Mercedes-AMG GT3 hardware for his personal endurance program reflects the brand's standing among elite drivers. Mercedes-AMG GT3 is a commercial product line separate from F1, but the halo effect benefits the Mercedes-AMG marque globally. Your DCF model's terminal-value assumptions on Mercedes brand premium should account for this kind of cross-segment visibility. (2) Verstappen-Red Bull future: a driver who PUBLICLY enjoys non-Red-Bull cars and PUBLICLY dislikes F1 2026 rules is a driver vulnerable to off-season recruitment. Mercedes already has Antonelli + Russell locked, but McLaren (Norris, Piastri) has a 2027 contract decision approaching for Norris. Watch for Verstappen-to-McLaren rumors strengthening through 2026."
+      },
+      {
+        id: "ben-sulayem-cadillac-backstory",
+        title: "FIA President Ben Sulayem reveals he was 'personally targeted' in political battle over Cadillac entry",
+        category: "Politics / Grid Expansion",
+        materiality: "medium",
+        date: "2026-05-14",
+        body: "FIA President Mohammed Ben Sulayem this week disclosed the political battle behind Cadillac's entry as F1's 11th team. According to his account, Ben Sulayem was 'personally targeted' during the process — which began as Andretti-Cadillac's bid that Liberty Media and the existing 10 teams rejected on grounds of anti-dilution and grid-competitiveness concerns. Ultimately Cadillac (without Andretti) entered for 2026 under TWG Global / General Motors ownership with Sergio Perez and Valtteri Bottas as drivers. The team is operating from a Silverstone-area base. The political insight Ben Sulayem provided: existing team principals coordinated opposition to grid expansion through Concorde voting and informal lobbying. This is the institutional pattern that Brown's letter to Ben Sulayem this week implicitly weaponizes — multi-team ownership structures amplify a single shareholder's voting weight in exactly these political battles.",
+        sources: [
+          { label: "GPToday — Ben Sulayem reveals bruising Cadillac political battle", url: "https://www.gptoday.com/" },
+          { label: "PlanetF1 ongoing FIA / Cadillac coverage", url: "https://www.planetf1.com/" }
+        ],
+        thesisRelevance: "Your Concorde and grid-expansion scenarios should now incorporate the explicit political dynamic Ben Sulayem revealed: team principals coordinate opposition to grid expansion. A 12th or 13th team is therefore unlikely without overwhelming financial inducement (very high entry fees, very large structural payments to existing teams). The Cadillac entry precedent set fees at $450M anti-dilution. Future entrants will face similar or higher. This protects existing team valuations — Mercedes' $6B Kurtz benchmark holds because grid scarcity holds. This is also why Brown's A/B team letter is strategically clever: it tries to lock the OWNERSHIP structure protection on top of the grid-expansion protection."
+      },
+      {
+        id: "v8-engine-debate-intensifies",
+        title: "V8 engine debate intensifies — Coulthard, Binotto comment as paddock divides",
+        category: "Regulatory",
+        materiality: "medium",
+        date: "2026-05-14",
+        body: "The V8 engine debate intensified this week with David Coulthard publicly agreeing with the push for a 2030-2031 return to V8 architecture while arguing the sport should 'go even further' than current proposals. Mattia Binotto (former Ferrari TP, now Audi-related role) defended the 2026 regulations as 'delivering a great show' — a position aligned with Wolff's 'critics should hide' post-Miami stance. The intra-paddock split: Wolff publicly defends 2026 framework but separately publicly supports V8 + electric boost (~1,200 hp) for 2030-2031 regulatory reset. McLaren's Andrea Stella has called for hardware regulation changes by 2028. FIA's Ben Sulayem has hinted at naturally aspirated direction for 2031+. Carlos Sainz softened his criticism, saying he 'isn't going to criticize anymore' but maintained 2026 rules are 'not good enough.' The V8 framing has substantial commercial implications: F1 V8 was the sound era (2006-2013), with significant fan-segment preference for it.",
+        sources: [
+          { label: "PlanetF1 — Coulthard agrees with V8 push, wants to go further", url: "https://www.planetf1.com/" },
+          { label: "PlanetF1 — Binotto says 2026 delivering great show despite V8 debate", url: "https://www.planetf1.com/" },
+          { label: "Motorsport — Carlos Sainz won't criticize 2026 rules anymore", url: "https://www.motorsport.com/f1/news/" }
+        ],
+        thesisRelevance: "For your 2031+ Concorde scenarios, the V8 debate is the leading indicator. If V8 + electric boost becomes the 2031+ direction, HPP's technical architecture investments shift significantly. Mercedes can win in either direction (electric expertise + ICE expertise) but the BALANCE of investment changes. Watch which faction wins the technical regulation negotiation between 2027-2029. Wolff supporting V8 + electric boost publicly is signal — Mercedes thinks they can win that battle. Add to scenarios: '2031 regulation = V8 hybrid' as ~45% probability, '2031 regulation = continued ICE/electric near-parity' as ~35%, '2031 regulation = naturally aspirated' as ~15%, other as 5%."
+      },
+      {
+        id: "audi-damage-control",
+        title: "Audi's Allan McNish on damage-control after Miami disaster: 'Judge us at the end of 2026'",
+        category: "Competitor",
+        materiality: "low",
+        date: "2026-05-12",
+        body: "Audi Team Principal Allan McNish requested patience this week after a disastrous Miami GP weekend. The team has struggled across the opening 4 races — well behind championship-fighting Mercedes, Ferrari, McLaren. McNish framed Audi's 2026 program as a multi-year build, requesting the team be 'judged at the end of 2026' rather than race by race. Audi has qualified for ADUO performance balancing (sufficient deficit threshold) and will receive permitted development hours and cost-cap relief in coming rounds. The Audi project — built on Sauber's Hinwil base, with substantial new investment — was always positioned as 2027-2028 competitive rather than 2026.",
+        sources: [
+          { label: "GPToday — McNish asks for Audi to be judged at end of 2026", url: "https://www.gptoday.com/" }
+        ],
+        thesisRelevance: "Audi's struggle reinforces the cost-cap competitive thesis: new entrants face multi-year ramp despite substantial financial firepower. This protects existing team valuations and reinforces the strategic value of being established. For Mercedes specifically: Audi qualifying for ADUO upgrades is one of three threats to Mercedes' current PU advantage (Ferrari ICE upgrade for Canada, Honda HRC potential, Audi development now). Track ADUO outcomes through H2 2026."
+      },
+      {
+        id: "antonelli-russell-intra-team",
+        title: "Antonelli vs Russell intra-team battle brewing — Wolff response anticipated",
+        category: "Personnel",
+        materiality: "low",
+        date: "2026-05-15",
+        body: "With Antonelli leading the Drivers' Championship (100 pts) and Russell at P2 (80 pts), the intra-Mercedes dynamic is becoming a paddock storyline. Motorsport.com reported on 'Wolff's predicted response' to a developing intra-team battle, citing past precedent where Wolff managed Hamilton-Rosberg (2014-2016) and Hamilton-Bottas (2017-2021) tensions. The dynamic is structurally different from those eras because Russell is the senior driver but Antonelli is the higher-performing rookie — flipping the usual hierarchy. Wolff's management approach typically includes: explicit team orders only when championship math requires it, equal car priority through mid-season, intra-team racing permitted until the team title is mathematically secured.",
+        sources: [
+          { label: "Motorsport — Wolff response to Mercedes intra-team battle predicted", url: "https://www.motorsport.com/f1/news/" }
+        ],
+        thesisRelevance: "For your Wolff leadership chapter (MD-04), this is real-time case study material. How Wolff manages Antonelli-Russell over the rest of 2026 will demonstrate his leadership style applied to a new dynamic (junior outperforming senior). The commercial implications: Antonelli winning the Drivers' Championship would be a generational marketing event for Mercedes (Italian rookie winning F1 title — first since Ascari in 1953). Petronas, INEOS, Crowdstrike portfolio renewal terms in 2027-2028 would benefit substantially. Your DCF model should treat the Antonelli championship scenario as a high-value commercial event."
+      }
+    ]
+  },
   {
     weekOf: "2026-05-05",
     weekLabel: "Week of May 5, 2026 — Post-Miami GP",
@@ -7204,6 +7367,1848 @@ LESSONS_F1.push(...LESSONS_F1_PART2);
 // Add Track 2 lessons to ALL_LESSONS
 if (typeof ALL_LESSONS !== 'undefined') {
   ALL_LESSONS.push(...LESSONS_F1);
+}
+
+
+// ===== 16_lessons_md.js =====
+// ============================================================================
+// V21 TRACK 3 — MERCEDES DEEP KNOWLEDGE (lessons 1-5)
+// ============================================================================
+// Interview-foundation lessons. Track 3 applies the FF + F1 frameworks
+// specifically to Mercedes-AMG Petronas F1 — the actual subject of your
+// Graduate Programme application.
+// ============================================================================
+
+const LESSONS_MD = [
+
+  // ==========================================================================
+  // MD-01: The Three-Entity Ownership Structure
+  // ==========================================================================
+  {
+    id: 'md-01',
+    track: 'md',
+    number: 1,
+    title: 'The Three-Entity Ownership Structure',
+    duration: 35,
+    prerequisites: ['f1-10'],
+    hook: 'Mercedes-AMG Petronas F1 is owned by three entities, each holding 33.3%. That fact will come up in your Graduate Programme interview, but knowing the headline number is not enough. You need to understand WHY this structure exists, HOW decisions get made across it, what each owner contributes beyond capital, and what could change it. By the end of this lesson you will be able to discuss Mercedes ownership at the level of someone who has read the registrations and watched the politics for years.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The three owners and what they own',
+        body: `The legal entity that operates the F1 team is **Mercedes-Benz Grand Prix Limited**, a UK private company with Companies House registration number **00787446**. Its registered office is the Brackley factory: Mercedes-AMG Petronas Formula One Team, Brackley, Northamptonshire, NN13 7BD. The company was originally registered in 1963 under a different name and has been the F1 team's operating entity since 2010.
+
+The three shareholders, each holding 33.3%:
+
+**1. Mercedes-Benz Holdings UK Ltd** (Companies House #03922880). A UK holding subsidiary of Mercedes-Benz Group AG (DAX: MBG, Frankfurt). This is the manufacturer stake. Mercedes-Benz Group AG is one of Germany's largest companies — €146B revenue in 2024, headquartered Stuttgart. The F1 team is a small line item in their accounts but enormous strategically: it is the most visible global brand exposure platform Mercedes operates.
+
+**2. INEOS Industries Holdings Limited** (Companies House #14179583). Part of the INEOS group founded by Sir Jim Ratcliffe. INEOS is a privately-held chemicals and industrial conglomerate (revenue ~$65B). Ratcliffe is one of the UK's wealthiest individuals. INEOS bought its 33.3% in 2020 for approximately £243M, becoming a third equal owner.
+
+**3. Toto Wolff via his holding entity.** Wolff's economic interest is held through corporate structures, the principal one being identified in Companies House as having approximately 33.3% economic interest in Mercedes-Benz Grand Prix Limited. Wolff is also CEO and Team Principal of the team — making him both an owner and the operational lead. In November 2025, Wolff sold approximately 15% of HIS stake (representing ~5% of the total team) to George Kurtz, CEO of CrowdStrike, in a transaction that implied a ~$6B total team valuation. See MD-05 for the full Kurtz transaction analysis.
+
+You can verify all three shareholders on Companies House: https://find-and-update.company-information.service.gov.uk/company/00787446`
+      },
+      {
+        type: 'callout',
+        style: 'info',
+        body: `**Primary sources to bookmark:**
+• Mercedes-Benz Grand Prix Limited Companies House page: https://find-and-update.company-information.service.gov.uk/company/00787446
+• Mercedes-Benz Group AG investor relations: https://group.mercedes-benz.com/investors/
+• INEOS Group corporate site: https://www.ineos.com
+• Annual filings (PSC register, accounts) are public — read them yourself before any Mercedes interview.`
+      },
+      {
+        type: 'concept',
+        heading: 'Why this structure exists — the strategic logic',
+        body: `Three roughly-equal stakeholders is unusual in F1. Most teams are either:
+- Single-owner (Aston Martin under Stroll; Haas under Gene Haas; Racing Bulls under Red Bull GmbH)
+- Single-corporate-parent (Ferrari N.V. publicly traded; Audi/Sauber under VW Group; Cadillac under TWG Global/GM)
+- PE-controlled (Williams under Dorilton Capital)
+- Sovereign-wealth-controlled (McLaren under Mumtalakat + CYVN)
+
+Mercedes' three-stakeholder structure was the result of specific historical decisions:
+
+**Stage 1 (2010-2019): Mercedes-Benz acquires the team.** When Mercedes bought what was then Brawn GP after their 2009 championship, Daimler AG (now Mercedes-Benz Group) initially held majority. Wolff joined as a minority investor and operating leader in 2013, taking ~30% then. Over the following years the stakes were rebalanced.
+
+**Stage 2 (2020): INEOS arrives.** INEOS signed initially as a major sponsor (replacing the title sponsor structure with Petronas in a different role), then converted commercial commitment into ownership in late 2020. The £243M purchase was equity, not sponsorship. Ratcliffe's stated logic: INEOS had a long-standing commercial relationship with Mercedes already (chemicals, lubricants, Tour de France team Ineos Grenadiers), and F1 ownership extended the partnership. The structural effect: Mercedes-Benz reduced from majority to one-third, retaining strategic influence without sole financial exposure.
+
+**Stage 3 (2020-present): Three equal partners.** The current 33.3% / 33.3% / 33.3% split reflects negotiated parity. No single party can dictate. Major decisions require alignment among all three.
+
+**The strategic value of this structure for Mercedes-Benz Group AG specifically:** It allows them to retain the brand asset (the team races as "Mercedes-AMG Petronas") and the technology halo (the engine R&D feeds back into Mercedes-Benz road car development) while sharing the financial commitment. £125M dividend distributed in 2024 means Mercedes-Benz Group receives approximately £41.7M from the F1 team annually. The team is now a cash-generating asset, not a brand expense.`
+      },
+      {
+        type: 'concept',
+        heading: 'How decisions actually get made',
+        body: `Three-equal-stakeholder structures often slow decisions. Mercedes has handled this through several mechanisms:
+
+**Operational decisions: Wolff alone.** As Team Principal and CEO, Wolff has explicit operational authority over racing, hiring, sponsorship pursuit, factory operations. He does not need INEOS or Mercedes-Benz consent for any normal weekly decision. This is why Wolff is the public face of the team — he genuinely runs it day-to-day.
+
+**Major strategic decisions: Board-level discussion.** Things like major sponsorship signings (Crowdstrike-level deals), driver contracts (Hamilton 2022 contract negotiations, Antonelli 2025 promotion), technical regulation lobbying positions, and capital structure changes go through a board where each owner has representation.
+
+**Decisions requiring unanimous consent:** Anything that would change the ownership structure itself (admitting new investors, repurchasing stakes, changing the company's articles of association) requires all three parties to agree. This is why the November 2025 Kurtz transaction was specifically structured as Wolff selling part of HIS stake, not as a new shareholder being admitted to the company — the latter would have required INEOS and Mercedes-Benz approval.
+
+**Day-to-day Wolff handles. Big strategic shifts go through the board. Identity-changing events require unanimous consent.** This is the actual governance pattern.`
+      },
+      {
+        type: 'concept',
+        heading: 'What each owner contributes beyond capital',
+        body: `**Mercedes-Benz Group AG contributes:**
+- The brand (the team races as Mercedes-AMG Petronas). Brand licensing is the largest single non-cash contribution.
+- Engineering R&D pipeline. The 2026 power unit was developed at HPP Brixworth (wholly owned by Mercedes-Benz Group), benefiting from electric powertrain knowledge transferred from Mercedes-EQ road car program.
+- Corporate relationships and access. Mercedes-Benz's relationships with hundreds of B2B customers facilitate F1 sponsorship sales.
+- Mercedes-Benz Inspire — the manufacturer's general graduate scheme, parallel to the team's F1 graduate scheme. This creates a talent pipeline you yourself may eventually traverse.
+
+**INEOS contributes:**
+- Industrial expertise. INEOS chemicals expertise contributes to lubricants, materials, and certain composite technologies.
+- Ratcliffe's network. INEOS Sport (which includes Mercedes F1, INEOS Grenadiers cycling, sailing teams) creates cross-promotional value.
+- Financial backstop. As a privately-held conglomerate, INEOS can support the team through downturns without quarterly-earnings pressure.
+
+**Wolff contributes:**
+- Operational leadership. Wolff is one of the most respected team principals in F1 history.
+- Motorsport network. His decades of relationships across F1 (drivers, engineers, FIA, FOM, other team principals) cannot be replicated by either corporate partner.
+- Decision speed. As both owner and operator, he can act faster than a manufacturer-only governance structure would allow.
+
+**The balance among the three is the key strategic feature.** If any one were dominant, the team would behave differently. The three-equal structure produces measured, consistent decision-making — neither pure manufacturer brand-focus (Ferrari's tendency) nor pure financial optimization (PE-owned Williams) nor pure owner-operator instinct (Aston Martin under Stroll).`
+      },
+      {
+        type: 'example',
+        heading: 'Worked example — calculating each owner\'s 2024 economic return',
+        body: `Mercedes paid a £125M dividend in 2024. With three 33.3% shareholders, distributions:
+
+Mercedes-Benz Holdings UK Ltd: £125M × 33.3% = **£41.7M**
+INEOS Industries Holdings Ltd: £125M × 33.3% = **£41.7M**
+Wolff entity: £125M × 33.3% = **£41.7M**
+
+But the economic returns to each owner extend beyond the dividend:
+
+**Mercedes-Benz Group AG (parent of Mercedes-Benz Holdings UK):** £41.7M dividend + IP licensing revenue from team's brand use (terms confidential) + R&D synergy benefits flowing into Mercedes-Benz road car program (intangible) + Mercedes-Benz Inspire talent pipeline access. Total economic return: well above £41.7M but not all of it cash.
+
+**INEOS Industries Holdings Ltd:** £41.7M dividend + INEOS Sport cross-marketing value + supplier relationships (some INEOS products used by the team — pricing terms confidential). Total: meaningful uplift above dividend.
+
+**Wolff:** £41.7M dividend less personal taxation + Team Principal salary + CEO compensation + capital gains accrual (because Wolff's stake value is appreciating). The November 2025 Kurtz transaction implied the team at $6B — so Wolff's 33.3% is worth approximately $2B on paper. The Kurtz sale crystallized approximately $300M of that for Wolff personally (15% of his stake at the implied valuation).
+
+This is why ownership of an F1 team is not just an annual cash play. The total return includes dividend, brand benefit, capital appreciation, and ancillary commercial benefits.`,
+        data: `Mercedes 2024 dividend distribution and approximate economic returns:
+═══════════════════════════════════════════════════════════════
+£125M total dividend paid in 2024 (£75M + £50M tranches)
+
+Per shareholder (33.3% each):                £41.7M cash dividend
++ Brand/IP/synergy value (Mercedes-Benz):    ~£20-50M intangible
++ Cross-marketing (INEOS):                   ~£10-20M intangible
++ Capital appreciation (Wolff/all):          Significant over time
+
+Wolff November 2025 partial-sale crystallization:
+  Implied team valuation:                    ~$6B (Sportico/Forbes)
+  Wolff's 33.3% implied value:                ~$2B
+  15% of Wolff's stake sold to Kurtz:         ~$300M crystallized
+
+This is why F1 team ownership is a long-horizon capital play,
+not just a dividend stream.`
+      },
+      {
+        type: 'think',
+        heading: 'How this matters in your Mercedes Graduate Programme interview',
+        body: `Interviewers will not test you on memorizing "33.3% each." They will test whether you understand the IMPLICATIONS of the structure. Likely questions:
+
+- "What's different about working at Mercedes vs a single-manufacturer team like Ferrari?" → You can talk about the balance, the speed of operational decisions Wolff makes vs the alignment needed for strategic moves, the parent-company dynamic without being parent-company-dominated.
+- "Why did Mercedes-Benz reduce to one-third ownership when they used to be majority?" → You can talk about INEOS arrival 2020, the £243M consideration, the strategic logic of sharing financial exposure while retaining brand control.
+- "What would a fourth investor mean for the team?" → You can explain why this would require unanimous consent of existing three, why this is unlikely, and why the November 2025 Kurtz transaction was structured to AVOID needing such consent.
+
+By the end of this track you should be able to discuss all of this without notes. Re-read this lesson before any Mercedes-related interview.`
+      }
+    ],
+
+    glossary: [
+      { term: 'PSC register', definition: 'Persons of Significant Control register. UK statutory disclosure of beneficial ownership. Mercedes\' PSC register at Companies House confirms the three-shareholder structure.' },
+      { term: 'INEOS', definition: 'Privately-held chemicals and industrial conglomerate. Founded by Sir Jim Ratcliffe. Owns 33.3% of Mercedes F1 since 2020 (£243M acquisition).' },
+      { term: 'Mercedes-Benz Group AG', definition: 'DAX-listed German manufacturer. Owns Mercedes F1 stake via UK subsidiary Mercedes-Benz Holdings UK Ltd.' },
+      { term: 'Mercedes-Benz Inspire', definition: 'Mercedes-Benz Group AG\'s general graduate programme. Parallel to the F1-team-specific Finance Graduate Programme.' },
+      { term: 'Brackley', definition: 'Mercedes F1\'s factory location in Northamptonshire, UK. Where the chassis is built. (HPP\'s engine factory is separately at Brixworth.)' }
+    ],
+
+    quiz: [
+      {
+        q: 'Mercedes paid a £125M dividend in 2024. Approximately how much went to Mercedes-Benz Group AG?',
+        options: [
+          'All £125M (they own the team)',
+          '£62.5M (50%)',
+          'Approximately £41.7M (33.3%) plus intangible IP/brand value',
+          'No dividend — Mercedes-Benz reinvests'
+        ],
+        correct: 2,
+        explanation: 'Each of the three equal shareholders receives 33.3% of dividends. £125M × 0.333 = £41.67M to each. But Mercedes-Benz Group AG\'s total economic benefit is higher because they also receive IP licensing, R&D synergy, and brand value. This is the correct way to think about manufacturer-team economic returns.'
+      },
+      {
+        q: 'Why was the November 2025 Kurtz transaction structured as Wolff selling part of his stake, rather than admitting Kurtz as a new shareholder?',
+        options: [
+          'Tax efficiency for Kurtz',
+          'Admitting a new shareholder would require unanimous consent from INEOS and Mercedes-Benz, which would have been politically harder to obtain. Selling part of an existing stake does not require that consent.',
+          'It was random',
+          'Kurtz preferred this structure'
+        ],
+        correct: 1,
+        explanation: 'Identity-changing events (new shareholders, changing the company\'s articles of association) require unanimous consent of all three existing parties. Wolff selling part of HIS personal stake does not. This is why the deal was structured as it was — Wolff retained operational simplicity while crystallizing capital and bringing in a strategic investor at his own discretion.'
+      },
+      {
+        q: 'What is Mercedes\' Companies House number?',
+        options: [
+          '00787446',
+          '01760288',
+          '03922880',
+          '14179583'
+        ],
+        correct: 0,
+        explanation: 'Mercedes-Benz Grand Prix Limited (the F1 team operating entity) is #00787446. HPP is #01760288. Mercedes-Benz Holdings UK Ltd (the shareholder vehicle) is #03922880. INEOS Industries Holdings is #14179583. Knowing the correct numbers is the kind of precision that signals you have actually read the source.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Does Wolff personally own his 33.3%, or is it through a corporate entity?",
+        a: "Through corporate entities, not personal ownership. UK and Austrian tax structures favor holding stakes through controlled vehicles. The PSC register at Companies House identifies the controlling persons but the legal shareholder is a corporate entity. Functionally Wolff controls the stake; technically it sits in his holding structures."
+      },
+      {
+        q: "Why doesn't Mercedes-Benz Group AG just buy back full control? They could afford it.",
+        a: "They could afford it (Mercedes-Benz Group market cap is ~€60B), but they don't want to. Three-equal structure shares the financial commitment, reduces single-point-of-failure exposure, and benefits from Wolff's operational excellence and INEOS's industrial network. Full ownership would also re-expose Mercedes-Benz Group quarterly earnings to F1's volatility — they specifically structured to avoid that. The current arrangement is a deliberate choice, not a constraint."
+      },
+      {
+        q: "What happens if Wolff retires or leaves?",
+        a: "This is the most important succession question in F1 and is reflected in your platform's Scenario Register. Wolff is 53 and has publicly stated no immediate plans to leave, but a 3-year horizon scenario gives 20-35% probability of a meaningful succession event. If Wolff exits, his stake transfers per his estate planning (already partially crystallized via Kurtz) and operational leadership passes to someone — possibly Mike Elliott (Chief Technical Officer), James Vowles (now at Williams, possible return), or an external hire. INEOS and Mercedes-Benz would need to align on his replacement."
+      },
+      {
+        q: "Can INEOS sell their stake? Could they?",
+        a: "INEOS could in principle sell, but would need agreement of the other two on the buyer. They could not unilaterally admit any buyer; the other shareholders have implicit veto rights through the articles of association. As a privately-held conglomerate, INEOS faces less pressure to liquidate than a PE fund would. The Ratcliffe-Wolff relationship appears stable. A surprise INEOS exit would be a major story and would be priced in advance by financial press."
+      },
+      {
+        q: "Does the team have any debt?",
+        a: "Mercedes' 2024 accounts show very modest debt relative to revenue. The team operates on a strong cash position from sponsorship and prize money. The £125M dividend distribution in 2024 (£75M paid by end of March 2025, £50M later) confirms a cash-rich balance sheet. Companies House filings disclose specifics if you want to verify."
+      }
+    ],
+
+    seeAgain: [
+      { label: 'See Mercedes ownership structure detail in Mercedes tab', tab: 'mercedes' },
+      { label: 'See the Kurtz transaction context', tab: 'mercedes' }
+    ]
+  },
+
+  // ==========================================================================
+  // MD-02: HPP — The Sister Entity
+  // ==========================================================================
+  {
+    id: 'md-02',
+    track: 'md',
+    number: 2,
+    title: 'HPP — The Sister Entity',
+    duration: 30,
+    prerequisites: ['md-01'],
+    hook: 'Mercedes AMG High Performance Powertrains (HPP) is the second half of the Mercedes F1 platform. Brixworth, UK. Companies House #01760288. Wholly owned by Mercedes-Benz Holdings UK Ltd — NOT by the team. This makes HPP economically distinct from the team but operationally fused with it. Understanding the HPP-team relationship is essential because your future role at Mercedes finance will almost certainly require working across both entities.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'What HPP is, legally and operationally',
+        body: `HPP is the legal entity that designs, builds, and supplies Mercedes power units to F1 teams. Its Companies House page: https://find-and-update.company-information.service.gov.uk/company/01760288.
+
+**Legal ownership:** 100% owned by Mercedes-Benz Holdings UK Ltd, which is itself a subsidiary of Mercedes-Benz Group AG. So HPP is NOT directly owned by the F1 team — it is owned by ONE OF the three F1 team shareholders, Mercedes-Benz Group AG.
+
+This structure is important. The F1 team is a 3-equal-shareholder entity. HPP is a 100% Mercedes-Benz subsidiary. They are not the same company. They have different shareholders, different governance, different accounts, different audits. But they operate as a single competitive unit.
+
+**Operational role:** HPP designs and manufactures the power unit (PU) used by Mercedes works team plus customer teams. For 2026, HPP supplies four teams: Mercedes (works), McLaren, Williams, and Alpine. Aston Martin was a Mercedes customer through 2025 but transitioned to Honda HRC works partnership for 2026, freeing up that customer slot. Alpine joined as customer for 2026 after Renault exited PU manufacturing.
+
+**Workforce:** Approximately 1,000 employees at Brixworth (separate from the ~1,300 at Brackley). Combined Mercedes F1 platform: ~2,300 people across two factories ~50 miles apart.
+
+**Financial scale:** HPP operates under FIA Section E Power Unit Manufacturer Cost Cap. For 2026, this cap is $130M annually. Separate from the team's $215M Section D cap. Both apply simultaneously to the combined Mercedes platform.`
+      },
+      {
+        type: 'callout',
+        style: 'info',
+        body: `**Source links:**
+• HPP Companies House: https://find-and-update.company-information.service.gov.uk/company/01760288
+• FIA Section E (PU manufacturer regulations): https://www.fia.com/regulation/category/110
+• Mercedes-AMG corporate page (which covers HPP): https://www.mercedes-amg.com/en/world-of-amg/motorsport/formula1.html
+• HPP standalone valuation estimates: industry analyst reports (Sportico, Autosport)
+
+HPP files its own separate Annual Report on Companies House. You can pull it just like you pulled the team's 2024 filing.`
+      },
+      {
+        type: 'concept',
+        heading: 'The customer engine supply economics',
+        body: `HPP's customer engine supply is governed by FIA Section E rules that cap customer pricing at $15M per team per season for 2026. HPP has three customer teams (McLaren, Williams, Alpine) in 2026, generating approximately:
+
+Customer revenue: 3 customers × $15M = $45M annually
+
+The true marginal cost of producing championship-grade F1 engines (designing, manufacturing, testing, shipping, supporting at races) is estimated at $20-30M+ per customer. So HPP is **subsidizing** its customer teams — supplying engines at less than cost recovery.
+
+This is intentional by the FIA. The $15M cap protects grid diversity (without affordable customer supply, only manufacturer-owned teams could afford to compete). But it means HPP must absorb the gap between $45M customer revenue and the larger true cost.
+
+Customer supply is therefore a **strategic decision**, not a pure profit play:
+- **Strategic benefit 1:** Three customer engines running each weekend provides validation data across different chassis and team conditions. This accelerates HPP's reliability and performance development.
+- **Strategic benefit 2:** Customer relationships create commercial allies in Concorde negotiations and FIA voting.
+- **Strategic benefit 3:** Customer teams provide market intelligence about competitor capabilities.
+- **Strategic benefit 4:** Restricting customer supply would shrink the number of Mercedes-branded power units on the grid — reducing the team's commercial visibility.
+
+**Wolff's public statement on customer supply (December 2025):** He has questioned whether HPP should continue customer supply at the $15M cap. The economics, in his stated view, do not justify the strategic benefits. This is a signal that Mercedes may reduce customer supply commitments for the 2031+ Concorde period. Track this through your Scenario Register entry.`
+      },
+      {
+        type: 'concept',
+        heading: 'The total Mercedes platform valuation',
+        body: `When analysts (Sportico, Forbes) value Mercedes F1, they typically value the TEAM (the Mercedes-Benz Grand Prix Ltd entity, #00787446). The Kurtz transaction implied this entity at approximately $6B in November 2025.
+
+But the TEAM is not the whole Mercedes F1 platform. HPP is a separate, valuable asset. Industry estimates value HPP at approximately $5B as a standalone — based on:
+- Revenue from team supply (transfer pricing — internal, not disclosed)
+- $45M annual customer supply revenue
+- IP value (patent portfolio, engine designs)
+- Competitive advantage in electric powertrain technology
+
+**Combined Mercedes F1 platform value: approximately $11B** (team $6B + HPP $5B).
+
+This matters for your thesis because the platform's commercial significance is roughly double what the team's headline valuation implies. When you discuss Mercedes' F1 platform in interviews, distinguish:
+- The TEAM is $6B (Kurtz transaction benchmark, Sportico methodology)
+- The COMBINED platform (team + HPP) is approximately $11B
+- The PARENT company's F1 strategy involves both entities plus brand value of Mercedes-AMG marque
+
+These are three different scopes and the right answer depends on the question being asked.`
+      },
+      {
+        type: 'example',
+        heading: 'Worked example — calculating Mercedes platform 2026 financial picture',
+        body: `Let me walk through approximate 2026 platform-level financials:
+
+**Team (Mercedes-Benz Grand Prix Ltd) — 2026 estimate:**
+Revenue (based on 2024 £636M + 2026 championship-leading uplift): ~£700-750M
+- Sponsorship: ~£420M (60% × revenue, growing with 2026 success)
+- Prize money: ~£140M (P1 Constructors P1 finish trajectory)
+- Other (licensing, etc.): ~£140M
+
+Operating costs: ~£500M (capped portion plus exclusions)
+EBIT: ~£200-230M
+Net profit (after tax): ~£140-160M
+Dividend (continued pattern): ~£130-150M
+
+**HPP — 2026 estimate:**
+Revenue:
+- Internal team supply (transfer pricing): undisclosed
+- Customer supply (3 × $15M): $45M
+- Other (parts, support): small
+Costs: capped at $130M (Section E)
+Direct profit contribution: limited (transfer pricing decides where profit sits)
+
+**Combined platform 2026:** Total revenue at platform level ~£800-850M; combined EBIT ~£200-250M.
+
+This is the financial scale you would be analyzing as a Mercedes Finance Graduate. The team is one entity; the platform is the bigger story.`,
+        data: `Approximate Mercedes platform 2026 financial estimate:
+═══════════════════════════════════════════════════════
+TEAM (Mercedes-Benz Grand Prix Ltd)
+  Revenue (2024 base + 2026 uplift)         ~£700-750M
+  Operating costs                            ~£500M
+  EBIT                                       ~£200-230M
+  Net profit (after tax)                     ~£140-160M
+  Expected dividend                          ~£130-150M
+
+HPP (HPP Ltd, 100% Mercedes-Benz Holdings UK)
+  Customer supply revenue (3 × $15M)         $45M
+  Internal transfer pricing                  undisclosed
+  Operating cost cap (Section E)             $130M ceiling
+  Standalone valuation estimate              ~$5B
+
+COMBINED PLATFORM
+  Approximate total revenue                  ~£800-850M
+  Approximate combined EBIT                  ~£200-250M
+  Estimated platform value                   ~$11B
+  Team valuation (Kurtz Nov 2025)            ~$6B`
+      }
+    ],
+
+    glossary: [
+      { term: 'HPP', definition: 'Mercedes AMG High Performance Powertrains Ltd. Brixworth, UK. 100% owned by Mercedes-Benz Holdings UK. Builds Mercedes F1 power units.' },
+      { term: 'Section E', definition: 'FIA Financial Regulations covering PU manufacturers. $130M cost cap for 2026.' },
+      { term: 'Customer supply', definition: 'PU manufacturer selling engines to non-works teams. Capped at $15M/season per Section E. For HPP: McLaren, Williams, Alpine in 2026.' },
+      { term: 'Transfer pricing', definition: 'Internal pricing between affiliated entities. HPP charges the works team for engines; the price is internally set and not disclosed externally.' },
+      { term: 'Mercedes platform', definition: 'Combined value of team (Mercedes-Benz Grand Prix Ltd) + HPP. Approximately $11B. Larger than team alone.' }
+    ],
+
+    quiz: [
+      {
+        q: 'Who owns HPP?',
+        options: [
+          'Mercedes-Benz Grand Prix Ltd (the team)',
+          '100% Mercedes-Benz Holdings UK Ltd (a Mercedes-Benz Group AG subsidiary)',
+          'Mercedes-Benz Group AG directly',
+          'The three F1 team shareholders jointly'
+        ],
+        correct: 1,
+        explanation: 'HPP is 100% owned by Mercedes-Benz Holdings UK Ltd, which is itself owned by Mercedes-Benz Group AG. HPP is NOT owned by the F1 team. This is structurally important: HPP and the team are separate entities with separate financials and governance, but they operate as a single competitive unit.'
+      },
+      {
+        q: 'HPP supplies customer engines at $15M per team. The true marginal cost is estimated $20-30M+. Why does Mercedes continue this?',
+        options: [
+          'It is required by FIA — no choice',
+          'It generates large profits',
+          'Strategic benefits: validation data from customer running, Concorde voting allies, market intelligence, increased Mercedes-branded engine visibility on grid. The economics are a subsidy; the value is strategic.',
+          'It is mandated by the team\'s ownership structure'
+        ],
+        correct: 2,
+        explanation: 'Customer supply is a STRATEGIC decision, not a profit decision. Wolff has publicly questioned whether the strategic benefits continue to justify the subsidy. This is one of the most important governance questions Mercedes faces for the 2031+ Concorde period.'
+      },
+      {
+        q: 'The November 2025 Kurtz transaction valued the F1 team at approximately $6B. What is the approximate value of the COMBINED Mercedes F1 platform (team + HPP)?',
+        options: [
+          '$6B (same as team)',
+          '$11B (team $6B + HPP ~$5B)',
+          '$3B (team minus HPP)',
+          '$50B'
+        ],
+        correct: 1,
+        explanation: 'The team is approximately $6B. HPP as a standalone is estimated at approximately $5B (based on customer supply revenue, IP value, and competitive electric powertrain advantage). Combined platform: ~$11B. When discussing Mercedes valuation in interviews, you must distinguish between these scopes — they answer different questions.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Why is HPP in Brixworth and the team in Brackley? Couldn't they be co-located?",
+        a: "Historical artifact. HPP grew from Ilmor (engine specialist company acquired by Mercedes-Benz). The team grew from Tyrrell → BAR → Honda → Brawn → Mercedes — different facility lineage in Brackley (~50 miles away). Physical co-location was considered but never executed because the existing facilities work, the geographic separation respects local employment patterns, and moving either would be enormously expensive. The 50-mile separation requires logistics coordination but does not meaningfully hurt operational integration."
+      },
+      {
+        q: "Do HPP employees feel like part of the same team as Brackley?",
+        a: "Operationally yes, organizationally somewhat. There are joint engineering reviews, integrated race weekend operations, shared performance metrics. But HPP files separate accounts, has its own employment contracts (HPP Ltd, not Mercedes-Benz Grand Prix Ltd), and reports up through Mercedes-Benz Group AG governance rather than the three-shareholder team board. There is a real organizational boundary even though the competitive output is unified."
+      },
+      {
+        q: "Could HPP ever be sold off independently?",
+        a: "Possible but unlikely under current ownership. Mercedes-Benz Group AG retains HPP because the electric powertrain technology developed there directly feeds Mercedes-Benz road car R&D. Selling HPP would forfeit that synergy. The most plausible HPP-related change is reducing customer supply (Wolff's stated concern) — not divestment of HPP itself. In a long-horizon scenario where Mercedes-Benz Group's EV strategy shifts dramatically, HPP could be reconsidered, but this is a 10+ year question."
+      },
+      {
+        q: "Does HPP have customers outside F1?",
+        a: "Limited. HPP's core business is F1 PU supply. Mercedes-AMG road car high-performance engines are produced separately (different factories). Some technology transfer happens but HPP is essentially an F1-focused entity."
+      },
+      {
+        q: "If I work at Mercedes Finance, will I work on HPP financials too?",
+        a: "Likely yes, at some point. The two entities file separately but the combined platform is what matters strategically. Finance roles at the team often touch HPP through related-party transaction analysis, transfer pricing reviews, and platform-level reporting to Mercedes-Benz Group AG. Being fluent in both entities' financials is a competitive advantage."
+      }
+    ],
+
+    seeAgain: [
+      { label: 'See HPP detail in Mercedes Deep Dive tab', tab: 'mercedes' },
+      { label: 'See Section E cost cap details', tab: 'fia' }
+    ]
+  },
+
+  // ==========================================================================
+  // MD-03: Reading the 2024 Companies House Filing Line-by-Line
+  // ==========================================================================
+  {
+    id: 'md-03',
+    track: 'md',
+    number: 3,
+    title: 'Reading the 2024 Companies House Filing — The Mercedes Numbers Live',
+    duration: 45,
+    prerequisites: ['md-02'],
+    hook: 'This lesson is partly redundant with AR-01 (which walks through the 2024 filing page-by-page). What MD-03 adds is the INTERPRETIVE layer — not what the numbers ARE but what they MEAN strategically. You will leave this lesson able to walk an interviewer through Mercedes 2024 financials and articulate the story behind each major line, not just recite the figures. Read AR-01 first if you have not yet; this lesson assumes that foundation.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The headline 2024 numbers — what they tell us strategically',
+        body: `Mercedes-Benz Grand Prix Limited 2024 Annual Accounts (filed Companies House 19 June 2025):
+
+**£636,025,000 revenue** — first time Mercedes has crossed £636M in any prior year. Comprised of approximately 60% sponsorship (£382M), prize money + Concorde bonuses (~£150M), and other commercial (~£104M). Growth from 2023's £546.5M was about 16.4%, achieved despite 2024 being a P4 Constructors' finish on track. **The growth WITHOUT competitive recovery is the central thesis insight.** Mercedes' commercial flywheel is decoupled from competitive performance because:
+- Sponsorship contracts are multi-year, locked in during prior strong periods
+- AVE ($5.7B claimed for 2024) reflects total media exposure not race-position-sensitive
+- Concorde structural payments (CCB, prize pool baseline) are not radically position-sensitive
+
+**£160,640,000 EBIT** (operating profit before tax) — 25.3% operating margin. Industry-leading for any F1 team. Higher than most professional sports franchises.
+
+**£120,344,000 post-tax net profit** — first F1 team to exceed £100M net profit in a single year. Tax rate approximately 25%.
+
+**£125,000,000 dividend** declared and partly paid — £75M paid by end of March 2025, £50M to follow. Distribution rate of approximately 104% of 2024 net profit (drawing slightly from retained earnings). This is high distribution and signals confidence in 2026 cash generation.
+
+**1,289 employees** at year-end. Up from 1,201 in 2023. Mercedes was hiring through the down period — investing in 2026 capability.`
+      },
+      {
+        type: 'callout',
+        style: 'info',
+        body: `**Primary source links:**
+• Companies House filing search: https://find-and-update.company-information.service.gov.uk/company/00787446
+• 2024 Annual Accounts (June 2025 filing) — download the PDF directly from Companies House
+• AR-01 walks through the document page-by-page; this lesson builds on that foundation`
+      },
+      {
+        type: 'concept',
+        heading: 'The Strategic Report — what Wolff is saying through the numbers',
+        body: `The Strategic Report (Pages 3-9 of the 2024 filing) is the section where directors describe the year and the outlook. Read carefully, this section reveals strategic intent.
+
+**Key claims in the 2024 Strategic Report:**
+
+1. **"Record revenue and profitability"** — explicitly positioned. The team wants you to notice the commercial achievement despite P4 finish.
+
+2. **"AVE of $5.7 billion (8% increase)"** — Advertising Value Equivalent. Used to justify sponsorship pricing and renewal terms. The 8% increase signals to sponsors that exposure is growing.
+
+3. **"15.2% TV coverage share"** — Mercedes' share of global F1 broadcast time. Roughly equal to top teams. This is a key sponsorship sales metric.
+
+4. **"Continued investment in 2026 power unit development"** — explicit statement that 2024 cash flow was funding 2026 capability. This is the central thesis you build on.
+
+5. **"Brackley and Brixworth investment programs"** — facility upgrades. Indicates capital deployment for long-term capacity, not just operating spend.
+
+6. **"Sustainability commitments"** — Mercedes was hitting carbon neutrality targets. Important for ESG-conscious sponsors (Microsoft, Crowdstrike, INEOS).
+
+**What's MISSING from the 2024 Strategic Report worth noting:**
+- No explicit discussion of customer supply economics (HPP-related, separate filing)
+- Limited disclosure of competitive expectations for 2025 or 2026 — typical for confidentiality reasons
+- No discussion of potential ownership changes — the Kurtz transaction was after this filing date
+
+When you cite the Strategic Report in interviews, mention specific page numbers. "On page 4 of the 2024 Strategic Report, Mercedes explicitly states they are continuing investment in 2026 power unit development despite the P4 finish, validating the commercial-funds-competitive thesis."`
+      },
+      {
+        type: 'concept',
+        heading: 'The income statement — the £636M to £120M waterfall',
+        body: `Page 14 of the 2024 filing contains the Income Statement. The flow:
+
+**Turnover (revenue): £636,025,000**
+LESS: Cost of sales (race operations, materials, freight, etc.)
+EQUALS: Gross profit
+
+**Administrative expenses** (overhead, R&D, salaries, etc.)
+EQUALS: **Operating profit (EBIT): £160,640,000**
+
+PLUS: Interest income (minor)
+LESS: Interest expense (minor)
+EQUALS: Profit before tax
+
+LESS: Tax (UK corporation tax, ~25%)
+EQUALS: **Net profit (after tax): £120,344,000**
+
+Compare against 2023:
+- 2023 Turnover: £546,450,000 (16.4% growth)
+- 2023 Net profit: £83,846,000 (43.5% growth in net profit — operating leverage)
+
+The operating leverage (net profit growing 43% while revenue grew 16%) is one of the most important financial features of F1 team economics under the cost cap. Fixed costs and capped spend mean each marginal revenue dollar largely converts to profit.
+
+**This operating leverage is the source of the platform's enterprise value.** A 16% revenue increase produced a 43% net profit increase. If you model 2026 revenue at £750M (a plausible projection given championship-leading status), operating leverage suggests net profit could be £170-200M — substantial upside above 2024's £120M record.`
+      },
+      {
+        type: 'concept',
+        heading: 'The Balance Sheet — what Mercedes actually owns',
+        body: `Page 15 of the 2024 filing. The Balance Sheet shows what the team owns and owes at year-end.
+
+**Fixed assets:** Property, plant, equipment (Brackley facility infrastructure, factory equipment), intangibles (some IP). The team's headquarters and racing equipment are on the books.
+
+**Current assets:** Cash, debtors (money owed by sponsors not yet paid), stocks (race parts).
+
+**Creditors due within one year:** Trade payables (money owed to suppliers), tax payable, dividends to be paid.
+
+**Creditors due after one year:** Long-term financing if any (Mercedes operates with minimal long-term debt).
+
+**Total net assets:** What the company is worth on a book basis (very different from market value).
+
+The cash position at year-end 2024 (after declaring but before fully paying the £125M dividend) was strong. This is consistent with the team's pattern of generating cash and distributing it.
+
+**Important caveat:** The Balance Sheet value of approximately £300-400M is the BOOK value (cost basis). The TEAM's market value, per the Kurtz transaction, is approximately $6B (£4.7B at GBP/USD ~0.78). The ~15-20x ratio of market to book value reflects the IP, brand, and Concorde rights that don't show up on a cost-basis balance sheet.
+
+When you discuss Mercedes valuation in interviews, distinguish book value (Balance Sheet) from market value (Kurtz). The Balance Sheet tells you "what we own"; the Kurtz transaction tells you "what we are worth."`
+      },
+      {
+        type: 'concept',
+        heading: 'Notes to the accounts — where the real story lives',
+        body: `Pages 17-30+ of the 2024 filing contain the Notes — detailed breakdowns of specific line items. The most strategically meaningful notes:
+
+**Note on Turnover breakdown:** Shows revenue by geography, by type (sponsorship vs prize money vs other). This is where you confirm the ~60% sponsorship share.
+
+**Note on Operating expenses:** Categories of spending. This is where you see the cost structure that the FIA Section D cap applies to (some categories) but not others (some are excluded).
+
+**Note on Tangible fixed assets:** Asset additions during the year. Facility investment programs are visible here.
+
+**Note on Employee benefits:** Average headcount (1,289 in 2024), total compensation cost. Important for understanding the people side of the business.
+
+**Note on Dividends:** Confirms the £75M + £50M split, the timing, and the per-shareholder distribution.
+
+**Note on Related party transactions:** This is where transfer pricing with HPP, payments to/from Mercedes-Benz Group AG, and any INEOS-related dealings are disclosed (in summary form).
+
+**Note on Subsequent events:** Anything material that happened after year-end but before filing date. The 2024 filing dated June 2025 would have captured early-2025 events.
+
+When you read your first Mercedes filing as a junior finance analyst, the Notes are where you will spend most of your time. The headline numbers are public; the relationships and structures behind them are in the Notes.`
+      },
+      {
+        type: 'example',
+        heading: 'Worked example — projecting 2025 and 2026 from 2024 baseline',
+        body: `Using 2024 as base and applying operating leverage assumptions:
+
+**2025 projection (Mercedes finished P2):**
+- Revenue: 2024 £636M × ~7% growth (P2 vs P4 commercial uplift) = ~£680M
+- Operating leverage: cost cap stable + sponsorship growth = operating profit ~£190M
+- Net profit: ~£140-150M
+- 2025 financials filed Companies House approximately June 2026 (verify when public)
+
+**2026 projection (Mercedes P1 leading at year-to-date):**
+- Revenue: 2024 £636M × ~15-18% growth = ~£720-750M
+- Operating leverage: same cap structure + championship uplift = operating profit ~£220-240M
+- Net profit: ~£170-190M
+- This would be a new record net profit for any F1 team
+
+**Implications for your DCF model:**
+- Stage 1 growth (2025-2027): 7-12% annual revenue growth
+- Stage 2 growth (2028-2030): 4-6% annual (more mature)
+- Terminal growth: 2% (post-2030)
+- Operating margin: 25-28%
+- Tax rate: 25%
+- Discount rate (WACC): typically 8-12% for sports franchises
+
+Build these inputs into your live DCF model. The 2024 Companies House filing is your most reliable anchor.`,
+        data: `Mercedes financial trajectory — 2023 → 2026:
+═════════════════════════════════════════════
+                  2023A      2024A     2025E     2026E
+Revenue (£M)      546.5      636.0     ~680      ~720-750
+Growth rate                  16.4%     ~7%       ~10-15%
+EBIT (£M)         ~114       160.6     ~190      ~220-240
+Operating margin            25.3%     ~28%      ~30%
+Net profit (£M)   83.8       120.3     ~140-150  ~170-190
+Dividend (£M)               125       ~130      ~140-150
+Headcount         1,201      1,289     ~1,350    ~1,400
+
+A is "actual" (filed). E is estimate. Build from 2024 baseline.
+Verify 2025 numbers when Companies House filing posts ~June 2026.`
+      },
+      {
+        type: 'think',
+        heading: 'The interview question this lesson prepares you for',
+        body: `Likely interview question: "Walk me through Mercedes' 2024 financials. What stood out to you?"
+
+Strong answer pattern:
+
+"Mercedes recorded £636 million in revenue against £160 million in operating profit — a 25% operating margin, which is industry-leading among F1 teams. Net profit was £120 million, the first time any F1 team has exceeded £100 million in post-tax profitability in a single year. Mercedes distributed £125 million as dividend across the three 33.3% shareholders, indicating strong cash generation.
+
+What stood out strategically: 2024 was a P4 Constructors finish — Mercedes' first time outside the top three since 2012. But commercial performance was at record highs. This decoupling of competitive from commercial is the central feature of cost-cap-era F1: sponsorship contracts are multi-year and not race-position-sensitive, prize money differences across positions are modest in absolute terms, and AVE-based exposure metrics continue strong regardless of single-season results. The 2024 cash flow funded the 2026 power unit development that produced Mercedes' current championship-leading position. Commercial dominance funds competitive resurgence."
+
+That answer demonstrates: command of headline numbers, understanding of operating margin context, knowledge of dividend distribution, articulation of the central thesis, and connecting financial to strategic. You can deliver this in 45-60 seconds. That's the level of fluency the Mercedes Graduate Programme expects.`
+      }
+    ],
+
+    glossary: [
+      { term: 'Strategic Report', definition: 'Directors\' narrative section of UK annual accounts. Pages 3-9 of Mercedes 2024 filing. Where directors describe the year and outlook.' },
+      { term: 'Operating leverage', definition: 'Net profit growing faster than revenue due to fixed-cost structure. Mercedes 2024: 16% revenue growth → 43% net profit growth.' },
+      { term: 'Book value', definition: 'Balance Sheet measure of company value (cost basis). Mercedes book value ~£300-400M. Distinct from market value (~$6B per Kurtz transaction).' },
+      { term: 'Related-party transactions', definition: 'Note disclosure of dealings between affiliated entities. Captures HPP transfer pricing, Mercedes-Benz Group AG payments, INEOS-related items.' }
+    ],
+
+    quiz: [
+      {
+        q: 'Mercedes\' 2024 revenue grew 16.4%, but net profit grew 43.5%. What explains this disparity?',
+        options: [
+          'Tax cut',
+          'Operating leverage — fixed costs plus capped operating spend means each marginal revenue dollar largely converts to profit',
+          'Accounting changes',
+          'Pure luck'
+        ],
+        correct: 1,
+        explanation: 'Operating leverage is the structural feature that produces the disparity. The cost cap (Section D, $215M for 2026) bounds operating spending, while revenue (sponsorship, prize money) has no upper bound. Revenue growth drops disproportionately to the bottom line. This is the core financial dynamic of cost-cap-era F1 economics.'
+      },
+      {
+        q: 'Mercedes 2024 book value (Balance Sheet) is approximately £300-400M. Market value (Kurtz transaction implied) is approximately $6B / £4.7B. Why the gap?',
+        options: [
+          'The Balance Sheet is wrong',
+          'Book value is cost basis (what assets cost); market value includes brand, IP, Concorde rights, and Going-concern earnings power, which are not on the Balance Sheet',
+          'The market is irrational',
+          'Both are correct measures of the same thing'
+        ],
+        correct: 1,
+        explanation: 'Book value = cost basis of identifiable assets. Market value = total enterprise value reflecting brand, IP, customer relationships (Concorde rights), and future earnings power. The 15-20x ratio is typical for franchise businesses. When you discuss Mercedes valuation in interviews, distinguish book from market — they answer different questions.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Is the Companies House filing the complete financial picture?",
+        a: "No — it's the legal disclosure for the F1 team entity (Mercedes-Benz Grand Prix Ltd) only. HPP files separately. Mercedes-Benz Group AG's consolidated accounts (Frankfurt-listed) include the team as a small line item. The full Mercedes F1 platform picture requires looking at the team filing + HPP filing + relevant Mercedes-Benz Group disclosures + Concorde-related Liberty Media disclosures."
+      },
+      {
+        q: "When will the 2025 filing post?",
+        a: "Typically June 2026 — UK accounts filing deadline is 9 months after year-end (so 30 September 2026 latest, but Mercedes files earlier). Monitor monthly through the Companies House WebFiling notification. When 2025 posts, update your DCF model immediately — 2025 was P2 Constructors and the financials will reflect both the late-2025 championship contention and continued 2026 development investment."
+      },
+      {
+        q: "Why is the Strategic Report only 6-7 pages? Couldn't they say more?",
+        a: "UK law requires the Strategic Report to give a 'fair, balanced, and comprehensive analysis' but provides flexibility on length. Mercedes deliberately keeps it concise to limit competitive disclosure. The Strategic Report is what they want stakeholders to read; the Notes are where actual numerical detail lives."
+      },
+      {
+        q: "How does the dividend mechanism work? Does it have to be 100% of net profit?",
+        a: "No — dividend is a board decision based on profit AND retained earnings AND cash position AND strategic priorities. Mercedes' 2024 dividend of £125M slightly exceeded 2024 net profit of £120M, drawing from retained earnings. This is unusual but signals confidence. Most companies distribute 30-70% of net profit; Mercedes' near-100% distribution rate reflects strong cash generation AND the shareholders' (especially Wolff's) explicit preference for current returns."
+      },
+      {
+        q: "How rigorous is the audit?",
+        a: "The 2024 accounts were audited by PwC. UK statutory audits are rigorous — they include verification of the Going Concern statement, internal control assessments, sample testing of transactions, and explicit auditor opinion. PwC's clean opinion in the 2024 filing means the numbers can be relied upon to within audit materiality (~1-2% of revenue typically). For your purposes, treat the filed numbers as authoritative."
+      }
+    ],
+
+    seeAgain: [
+      { label: 'See line-by-line walkthrough in AR-01', tab: 'classroom' },
+      { label: 'See Mercedes financial summary', tab: 'mercedes' }
+    ]
+  },
+
+  // ==========================================================================
+  // MD-04: Toto Wolff — Career Arc and Decision Patterns
+  // ==========================================================================
+  {
+    id: 'md-04',
+    track: 'md',
+    number: 4,
+    title: 'Toto Wolff — Career Arc and Decision Patterns',
+    duration: 30,
+    prerequisites: ['md-03'],
+    hook: 'You will work for an organization that is, in many ways, Toto Wolff. Understanding how Wolff thinks — his finance background, his decision-making patterns, his strategic priorities — is essential for the Mercedes Graduate Programme interview because that is the leadership style you will be evaluated against. This lesson is biographical but with a purpose: to give you the framework for thinking like the man who built the team.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The Career arc',
+        body: `**Born 1972 in Vienna, Austria.** Father was Romanian, mother was Polish. Father died of cancer when Wolff was 8. Stepfather raised him in modest middle-class circumstances. Wolff has spoken publicly about this upbringing shaping his work ethic.
+
+**Early career: Investment banking and finance.** After studies at Vienna University of Economics and Business Administration, Wolff worked in investment banking. He cites Goldman Sachs and other investment finance institutions in his background, but the most important early career detail is that he TRAINED AS A FINANCIER, not as a racing person. The mathematical and analytical disciplines of investment finance — DCF modeling, M&A analysis, capital structure — were his foundation.
+
+**Mid-career: Racing investment.** In the early 2000s Wolff began investing in motorsport — initially as a racing driver himself (he raced in various series), then as an investor in racing teams. He developed relationships with various stakeholders in F1 and racing organizations.
+
+**Williams F1 executive role (2009-2012).** Wolff acquired a stake in Williams F1 and served as Executive Director. This was his entry into the F1 commercial world. The Williams experience taught him both the upside and the limitations of F1 ownership. He left Williams in 2013 to pursue the Mercedes opportunity.
+
+**Mercedes F1 — 2013 to present.** Wolff invested in Mercedes' newly-acquired F1 team (formerly Brawn GP, then Mercedes from 2010). Initially CEO, becoming Team Principal subsequently. His investment grew from approximately 30% to his current 33.3% (later reduced to ~28% effective after the Kurtz partial sale, but with continuing operational authority).
+
+The Mercedes-Wolff fit: Wolff's financial discipline and operational rigor complemented Mercedes-Benz Group's manufacturer-led management style. The team won 8 consecutive Constructors' Championships (2014-2021) under his leadership.
+
+**Wolff's evolution:** From financier → racing driver → racing team executive → F1 team owner → industry-leading team principal → one of motorsport's most influential figures. The whole career arc is *finance-trained operator*, not *racer-turned-businessman*. That distinction matters.`
+      },
+      {
+        type: 'callout',
+        style: 'info',
+        body: `**Sources for Wolff biographical content:**
+• Wikipedia (verified biographical facts): https://en.wikipedia.org/wiki/Toto_Wolff
+• Mercedes-AMG Petronas team site (Wolff bio): https://www.mercedes-amg.com/en/world-of-amg/motorsport/formula1.html
+• "Drive to Survive" Netflix series — extensive Wolff coverage across multiple seasons
+• Various long-form interviews (Financial Times, Sky Sports, BBC) accessible via Google
+• Your Toto Wolff self-education plan in the platform recommends specific books and interviews`
+      },
+      {
+        type: 'concept',
+        heading: 'The Wolff decision-making style',
+        body: `Across two decades of public statements and visible decisions, several Wolff decision-making patterns emerge:
+
+**1. Long-horizon thinking.** Wolff frequently discusses 3-5-year horizons publicly. The 2026 power unit development started in 2022. The Antonelli driver development started in 2018-2019 (junior categories). Wolff plans backwards from where the team should be in 5 years.
+
+**2. Financial discipline.** Wolff publicly references financial discipline as a competitive advantage. The cost cap is not a limit to be reluctantly accepted but a framework Mercedes can win within better than rivals.
+
+**3. Driver development over acquisitions.** Wolff favors developing young talent (Antonelli) over acquiring established stars (Hamilton was an exception, occurring before cost cap). The economics favor developed talent: lower salary cost, longer contract duration, alignment with team culture.
+
+**4. Stable team composition.** Wolff retains senior leadership for long periods. Mike Elliott (former Technical Director, now CTO) has been with the team since 2010. James Allison (Technical Director until 2024) had a 15+ year affiliation. This stability is intentional.
+
+**5. Public communication as strategy.** Wolff's public statements are deliberate strategic instruments. "Scalpel not baseball bat" (regulation tweaks). "Critics should hide" (post-Miami). "Catch-up not leapfrog" (ADUO). These are not casual remarks — they are positioning statements.
+
+**6. Multi-stakeholder governance respect.** Wolff has managed the three-equal-stakeholder structure for over 5 years without major public friction. This is exceptional — three-equal ownership structures usually break down within 2-3 years.
+
+**7. Willingness to admit error.** Wolff has publicly acknowledged the 2022-2024 period as the team's down period. He does not frame setbacks as victories. This calibration of public messaging maintains credibility.
+
+**The combined pattern:** Wolff is a long-horizon, financially-disciplined, stability-preferring operator who uses public communication as a strategic tool. This is the leadership style you will be evaluated against in the Mercedes Graduate Programme.`
+      },
+      {
+        type: 'concept',
+        heading: 'What this means for working at Mercedes',
+        body: `Mercedes' organizational culture reflects Wolff's leadership patterns:
+
+**Long-horizon decisions are valued.** "What does this mean for 2031?" is not unusual question in Mercedes finance meetings.
+
+**Quantitative rigor is expected.** Wolff was trained as a financier. He will not accept "we think this is right" — he wants the analysis and the assumptions visible.
+
+**Stability is preferred over disruption.** Junior analysts who recommend dramatic strategic shifts on incomplete data are unlikely to advance. Junior analysts who recommend disciplined refinements to working systems are likely to advance.
+
+**Public communication discipline.** Junior analysts who tweet about company matters or share confidential analyses on social media will not advance. The team's communication is centralized through Wolff and his deputies for a reason.
+
+**Cross-stakeholder fluency.** Mercedes works with three shareholders, plus Mercedes-Benz Group AG senior leadership, plus HPP leadership, plus the FIA, plus sponsors. Junior analysts who learn to speak with each constituency in appropriate register will rise faster.
+
+**Calibrated confidence.** Wolff is confident but not bombastic. He frequently acknowledges what he doesn't know. Junior analysts who claim certainty they don't have will not match this style; junior analysts who present calibrated uncertainty (probability ranges, scenario analysis) will fit.
+
+**This is the cultural fit you will be evaluated against.** Your Mercedes Graduate Programme interview will assess whether you communicate the way Wolff's team communicates. Your platform, your DCF model, your scenario register, your weekly news tracking — all of these align with Wolff's style. You are building the right foundation.`
+      },
+      {
+        type: 'think',
+        heading: 'How to use Wolff biographical knowledge in the interview',
+        body: `You will not be asked "tell me about Toto Wolff." That would be unusual. But Wolff's decision patterns will shape every interview question. Likely:
+
+- "How would you balance commercial pressure against competitive priorities?" → You can answer with Wolff's pattern: long-horizon thinking, commercial discipline as competitive advantage, the 2024-2026 thesis demonstrating commercial-funds-competitive.
+
+- "How would you communicate uncertainty in a financial forecast?" → You can mirror Wolff's calibrated style: ranges, scenarios, explicit assumptions.
+
+- "What would you do differently from current leadership?" → Don't fall into this trap. Express respectful learning intent. Wolff retains senior leadership for years because he doesn't reward disruption.
+
+- "How would you approach a customer supply economic question?" → You can reference Wolff's publicly stated reservations on customer supply ("the business of leasing engines is no longer compelling") and demonstrate you've absorbed his thinking.
+
+Read 2-3 long-form Wolff interviews before your Mercedes Graduate Programme interview. The patterns will become recognizable.`
+      }
+    ],
+
+    glossary: [
+      { term: 'Team Principal', definition: 'F1 team\'s top operational leader. Reports to ownership; manages day-to-day racing, hiring, sponsorship. Wolff has held this role at Mercedes since 2013.' },
+      { term: 'Williams F1', definition: 'British F1 team. Wolff was Executive Director here 2009-2012 before joining Mercedes. Provided his entry into F1 commercial world.' },
+      { term: 'Brawn GP', definition: 'Predecessor team to Mercedes F1. Won 2009 Constructors\' Championship before Mercedes-Benz acquired the team.' }
+    ],
+
+    quiz: [
+      {
+        q: 'What is Toto Wolff\'s professional training?',
+        options: [
+          'Mechanical engineering',
+          'Racing driver',
+          'Investment finance / banking (Vienna University of Economics and Business; investment banking career before motorsport)',
+          'Marketing'
+        ],
+        correct: 2,
+        explanation: 'Wolff is finance-trained, not engineering-trained or driver-trained. This shapes how Mercedes operates: financial discipline as competitive advantage, DCF-style thinking applied to strategic decisions, comfort with the cost cap framework. The Mercedes Graduate Programme is finance-focused for a reason — the team is shaped by a financier\'s organizational instincts.'
+      },
+      {
+        q: 'What does Wolff\'s "scalpel not baseball bat" comment about 2026 regulations signal about his decision-making style?',
+        options: [
+          'He prefers violent imagery',
+          'He prefers calibrated, targeted adjustments over wholesale rewrites — reflecting general preference for stability and refinement over disruption',
+          'He doesn\'t care about regulations',
+          'He wants to abolish regulations'
+        ],
+        correct: 1,
+        explanation: 'Wolff prefers refinement over disruption. He retains senior leadership for years, manages multi-stakeholder governance carefully, and publicly communicates measured positions. The "scalpel not baseball bat" framing is consistent with his broader operational philosophy: when something is working, refine it; do not overhaul it.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Will I actually meet Wolff if I get the Graduate role?",
+        a: "Likely briefly — graduate cohort welcomes are common. Sustained interaction would happen if you advance to specific finance leadership roles. Wolff is genuinely accessible to junior staff (this is well-documented), but he is also working with three owners, FIA, FOM, and ~2,300 employees. Plan for occasional but meaningful interaction, not daily proximity."
+      },
+      {
+        q: "What was Wolff's relationship with Lewis Hamilton like?",
+        a: "Long-running and complex. Wolff signed Hamilton in 2013, won 7 Drivers' Championships together. Hamilton transferred to Ferrari for 2025. The relationship was characterized by mutual respect, occasional public tension (especially 2021 Abu Dhabi and the contract negotiations of 2022-2023), and ultimately professional separation. Wolff has spoken publicly about supporting Hamilton's Ferrari move while emphasizing Mercedes' future direction. Useful interview reference if you want to discuss leadership-driver dynamics."
+      },
+      {
+        q: "Is Wolff likely to retire soon?",
+        a: "He has publicly said no immediate plans (multiple statements 2024-2026). He is 53 in 2026 and shows no signs of slowing. The Kurtz partial sale in November 2025 was about capital crystallization and bringing strategic investor capital, not about preparing for departure. Your platform's Scenario Register tracks a 20-35% probability of meaningful succession over a 3-year horizon — significant but not imminent. Plan for Wolff continuing through your Graduate Programme tenure."
+      },
+      {
+        q: "Who would replace Wolff if he did leave?",
+        a: "No formal succession plan is public, but internal candidates include Mike Elliott (CTO), James Vowles (currently Williams TP but could return), or potentially someone from Mercedes-Benz Group AG leadership. External candidates from rival teams could also be considered. The succession decision would require unanimous consent of all three shareholders, which is exactly why it would be carefully planned — not improvised."
+      },
+      {
+        q: "Does Wolff still drive racing cars personally?",
+        a: "Occasionally for charity events or product launches. Not competitively. His current racing involvement is investor and executive, not driver. His perspective on the cars he sees racing is shaped by his background as a developmentally-capable amateur driver, which gives him useful operational intuition beyond pure financial analysis."
+      }
+    ],
+
+    seeAgain: [
+      { label: 'See Wolff biographical context', tab: 'mercedes' },
+      { label: 'See your Wolff self-education plan', tab: 'classroom' }
+    ]
+  },
+
+  // ==========================================================================
+  // MD-05: The November 2025 Kurtz Transaction
+  // ==========================================================================
+  {
+    id: 'md-05',
+    track: 'md',
+    number: 5,
+    title: 'The November 2025 Kurtz Transaction',
+    duration: 25,
+    prerequisites: ['md-04'],
+    hook: 'In November 2025, George Kurtz — CEO of CrowdStrike (cybersecurity company, NASDAQ: CRWD) — purchased approximately 15% of Toto Wolff\'s stake in Mercedes F1, implying a $6B total team valuation. This single transaction is the most important valuation data point in modern F1 finance. It is the benchmark against which all F1 team valuations are now measured. Understanding this transaction in detail is essential for any Mercedes finance role.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'What happened',
+        body: `On approximately November 20, 2025, George Kurtz (CEO of CrowdStrike Holdings, Inc.) purchased a stake in Mercedes-AMG Petronas F1. The transaction was structured as follows:
+
+**Buyer:** George Kurtz, personally (not through CrowdStrike). The transaction was a personal investment, not a corporate-level CrowdStrike acquisition of an F1 asset.
+
+**Seller:** Toto Wolff (via his holding entities). Wolff sold approximately 15% of HIS personal stake in Mercedes — equivalent to approximately 5% of the total team (15% × 33.3%).
+
+**Implied team valuation:** Approximately $6 billion. Based on the transaction's $300M consideration paid for ~5% of the team.
+
+**Result:** Kurtz now holds an effective ~5% interest in the team. Wolff retained ~28% (originally 33.3%, less the 5% transferred). The team's three-shareholder structure became formally four-stakeholder (Mercedes-Benz Holdings UK, INEOS, Wolff entity, Kurtz holding) but Wolff retained operational authority and decision rights.
+
+**Why this transaction structure?** Several reasons:
+1. **Avoid unanimous consent.** Admitting Kurtz as a new direct shareholder of the team would have required Mercedes-Benz Holdings UK and INEOS to consent. Selling part of Wolff's existing stake (rather than issuing new shares or admitting a new shareholder) did not.
+2. **Wolff capital crystallization.** Wolff converted illiquid equity into cash, while retaining substantial economic interest. Approximately $300M moved from illiquid stake to liquid capital.
+3. **Strategic investor benefits.** Kurtz brings CrowdStrike sponsorship visibility (Crowdstrike is a current Mercedes sponsor; the personal stake aligns commercial incentives further). It also brings Kurtz's network in technology and cybersecurity sectors.
+4. **Future fundraising option.** The Kurtz precedent suggests Wolff could sell more of his stake in future to additional investors, all without requiring INEOS/Mercedes-Benz consent.`
+      },
+      {
+        type: 'callout',
+        style: 'info',
+        body: `**Primary sources for the Kurtz transaction:**
+• Forbes coverage November 2025: https://www.forbes.com (search "Kurtz Mercedes F1")
+• Sportico valuation analysis: https://www.sportico.com
+• Mercedes' formal statement on the transaction (team press release)
+• CrowdStrike's SEC disclosures — Kurtz, as a 10b-5 reporting person and CEO, has disclosure obligations around significant personal financial transactions
+
+The $6B implied valuation has become THE F1 team valuation benchmark across financial press. Other 2025-2026 valuation discussions reference it explicitly.`
+      },
+      {
+        type: 'concept',
+        heading: 'Why this transaction matters as a valuation benchmark',
+        body: `Before November 2025, F1 team valuations were estimates derived from:
+- Forbes/Sportico annual rankings (methodology-based but not transaction-based)
+- Liberty Media's stock-based F1 ecosystem valuation
+- Historical sales (Williams 2020 at ~$200M; McLaren ownership transactions)
+
+The Kurtz transaction provided the first ACTUAL minority-stake transaction price for a top F1 team in years. Critically:
+- The price was negotiated by sophisticated parties (Wolff is a former investment banker; Kurtz is a CEO with M&A experience)
+- The buyer paid in cash, not stock
+- Mercedes' position was strong (P2 2025 Constructors at the time, ownership intact, championship-leading 2026 visibility ahead)
+
+The $6B valuation is therefore highly credible as a market benchmark. Other F1 team valuation conversations now anchor to it:
+- Ferrari (Ferrari N.V., public company) is valued at higher than $6B
+- McLaren (sovereign-wealth controlled) at approximately $4-5B in private discussions
+- Red Bull (privately held) at approximately $3-4B
+- Williams (Dorilton PE) at approximately $2-2.5B given expected exit
+- Lower-grid teams substantially less
+
+**For your DCF model:** The $6B Kurtz implied valuation is now the anchor for the Mercedes team. Your DCF must produce a result that converges toward this number, or you must explicitly explain why your DCF deviates.`
+      },
+      {
+        type: 'concept',
+        heading: 'Reverse-engineering the Kurtz transaction',
+        body: `If $6B is the team valuation and ~5% is the transaction size, the consideration was approximately $300M. Let me show what assumptions support a $6B valuation:
+
+Mercedes 2024 net profit: £120M = approximately $150M (at ~1.25 GBP/USD)
+Implied price-to-earnings multiple: $6B / $150M = 40x
+
+A 40x P/E ratio for a sports franchise is plausible because:
+- Growth rate (Mercedes revenue growing 16% in 2024, on track for similar or higher in 2026)
+- Operating leverage (43% net profit growth on 16% revenue growth in 2024)
+- Capital structure stability (low debt, strong cash generation)
+- Concorde-defined revenue floor (multi-year contractually-defined prize money)
+- Brand premium (Mercedes is one of the world's most recognizable luxury brands)
+
+If you build a DCF with these inputs:
+- Revenue growth: 12-15% in years 1-3, declining to 5% terminal
+- Operating margin: 25-28%
+- Tax rate: 25%
+- Terminal growth: 2%
+- Discount rate: 9-10%
+
+You should derive a present value approximately in the $5-7B range, depending on specific assumptions. The Kurtz transaction at $6B is squarely in this analytical band.
+
+**Your DCF should hit approximately $6B as base case.** If it hits $4B, your assumptions are too conservative. If it hits $9B, you are too aggressive. Calibrate against the market benchmark.`
+      },
+      {
+        type: 'example',
+        heading: 'Worked example — building your DCF to the Kurtz benchmark',
+        body: `Sample DCF inputs that would produce a $6B valuation:
+
+**Year 1 (2026 forecast):**
+- Revenue: £750M (vs 2024's £636M, 17% growth on championship-leading)
+- Operating margin: 28% (modest improvement on 2024)
+- EBIT: £210M
+- Tax: 25%
+- Net profit: £158M
+
+**Year 2-5: 8-10% revenue growth, margin stable.**
+- 2027: £810M revenue / £225M EBIT / £170M net profit
+- 2028: £870M / £245M / £185M
+- 2029: £935M / £265M / £200M
+- 2030: £1,000M / £285M / £215M
+
+**Years 6+ (2031-perpetual): 4% revenue growth, margin stable, 2% terminal growth at year 10.**
+
+**Discount rate: 9% (WACC for sports franchises, mid-range)**
+
+**Present value (PV) sum across forecast years + terminal value:** approximately £4.4-4.6B = $5.5-5.8B (at 1.27 GBP/USD).
+
+That's slightly below the $6B implied benchmark, suggesting the market views Mercedes slightly more favorably than these assumptions. Calibrate by:
+- Raising base revenue growth (15% rather than 17% in year 1)
+- Lowering discount rate (8.5% rather than 9%)
+- Higher terminal value (more optimistic growth in years 6+)
+
+These calibrations are what professional valuation analysts do. Your live DCF should be set up to allow easy assumption changes.`,
+        data: `Sample DCF to derive $6B Mercedes valuation:
+═══════════════════════════════════════════════════════════
+                  Year 1     Year 3     Year 5     Terminal
+Revenue (£M)      750        870        1,000      with 2% g
+EBIT (£M)         210        245        285        same
+Net profit (£M)   158        185        215        same
+
+Annual cash flow approximation (£M)              158-215+
+Discount rate (WACC)                              9%
+Present value of forecast years (PV)               £3.0-3.5B
+Terminal value (TV)                                £1.5-1.7B
+Total enterprise value                             £4.5-5.2B
+
+Converted to USD (at GBP/USD ~1.27)                $5.7-6.6B
+
+The Kurtz benchmark ($6B) sits in this analytical band.
+Your DCF must converge toward this number to be credible.`
+      }
+    ],
+
+    glossary: [
+      { term: 'George Kurtz', definition: 'CEO of CrowdStrike (cybersecurity company, NASDAQ: CRWD). Purchased ~5% of Mercedes F1 in November 2025 for ~$300M, implying $6B team valuation.' },
+      { term: 'CrowdStrike', definition: 'Public cybersecurity company. NASDAQ: CRWD. Mercedes sponsor since 2024. Kurtz transaction is personal, not corporate-level.' },
+      { term: 'Implied valuation', definition: 'Total entity value derived from a minority-stake transaction price. If 5% sells for $300M, implied total: $300M / 0.05 = $6B.' },
+      { term: 'P/E multiple', definition: 'Price-to-earnings ratio. Mercedes\' implied 40x P/E reflects growth, operating leverage, and franchise quality.' }
+    ],
+
+    quiz: [
+      {
+        q: 'Why was the November 2025 Kurtz transaction structured as Wolff selling part of his stake rather than admitting Kurtz as a new direct shareholder?',
+        options: [
+          'Tax reasons for Kurtz',
+          'Admitting a new shareholder would require unanimous consent of Mercedes-Benz Holdings UK and INEOS. Selling part of an existing stake did not.',
+          'Random structural choice',
+          'It was easier'
+        ],
+        correct: 1,
+        explanation: 'Identity-changing events (new direct shareholders) require unanimous consent of existing shareholders. Wolff selling part of HIS stake does not — it falls within his own discretionary rights. This structural choice avoided needing INEOS/Mercedes-Benz consent. The same mechanism could be used for future investors.'
+      },
+      {
+        q: 'A 40x P/E multiple for Mercedes implied by the Kurtz transaction is high but justifiable. What primary factors support it?',
+        options: [
+          'Low growth, low margins, weak balance sheet',
+          'Growth trajectory (17% revenue), operating leverage, Concorde revenue floor, brand premium, capital structure stability',
+          'Pure speculation',
+          'Tax avoidance'
+        ],
+        correct: 1,
+        explanation: 'Strong growth, operating leverage (43% profit growth on 16% revenue growth), multi-year Concorde-defined revenue floor (predictability), low debt (capital structure stability), and Mercedes\' status as one of world\'s most recognizable luxury brands all support a premium multiple. Sports franchises with these qualities routinely trade at 30-50x P/E.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Did CrowdStrike stockholders react to Kurtz's personal investment?",
+        a: "Initially minor sell-off followed by recovery as analysts confirmed the personal nature of the transaction (not corporate-level commitment of CrowdStrike resources). The relationship is sponsorship (corporate) and ownership (personal Kurtz) — distinct legal and economic relationships. CrowdStrike's stock trades independently of Mercedes F1 dynamics."
+      },
+      {
+        q: "Is Kurtz involved in operational decisions at Mercedes?",
+        a: "Minimal direct involvement. Operational decisions rest with Wolff. Kurtz holds an economic interest and benefits from team performance through dividend distribution and capital appreciation, but he does not participate in day-to-day operations. His value to the team is strategic (CrowdStrike commercial relationship deepening, technology sector network access) rather than operational."
+      },
+      {
+        q: "What is Kurtz's relationship with the other shareholders?",
+        a: "Indirect. He holds his interest through Wolff's holding structure, not as a direct shareholder of Mercedes-Benz Grand Prix Ltd. INEOS and Mercedes-Benz Group AG retain their separate direct stakes. Kurtz's relationship is bilateral with Wolff. The three-shareholder team governance structure is technically unchanged."
+      },
+      {
+        q: "Could more partial-stake transactions follow?",
+        a: "Yes, structurally Wolff could sell more of his stake to additional investors using the same mechanism. Each transaction would convert illiquid equity to cash for Wolff. The constraint is finding strategic buyers who add value beyond capital. Speculation includes other tech CEOs, sports investors, or family offices. Track this through your platform's Scenario Register."
+      },
+      {
+        q: "What's the Forbes/Sportico annual ranking compared to the Kurtz benchmark?",
+        a: "Sportico's Mercedes valuation (their May 2025 ranking) was approximately $4.9B. The Kurtz transaction at $6B was higher — reflecting the realized market value rather than methodology-based estimate. The financial press now uses $6B as the benchmark, with the lower Sportico number cited as the academic estimate."
+      }
+    ],
+
+    seeAgain: [
+      { label: 'See Mercedes ownership and Kurtz context', tab: 'mercedes' },
+      { label: 'See DCF model', tab: 'dcf' }
+    ]
+  }
+];
+
+// Track 3 part 2 file (md-06 through md-10) appends to LESSONS_MD
+
+
+// ===== 17_lessons_md_part2.js =====
+// ============================================================================
+// V21 TRACK 3 — MERCEDES DEEP KNOWLEDGE (lessons 6-10)
+// ============================================================================
+
+const LESSONS_MD_PART2 = [
+
+  // ==========================================================================
+  // MD-06: The 2024 → 2026 Turnaround
+  // ==========================================================================
+  {
+    id: 'md-06',
+    track: 'md',
+    number: 6,
+    title: 'The 2024 \u2192 2026 Turnaround — How P4 Became P1',
+    duration: 30,
+    prerequisites: ['md-05'],
+    hook: 'Mercedes finished 2024 in P4 — their first time outside the top three since 2012. By April 2026, they were leading both championships after winning the first four races. The turnaround is the central case study in cost-cap-era F1 strategy. This is the story your Mercedes Graduate Programme application will tell to demonstrate strategic insight.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The 2024 down period — what went wrong',
+        body: `Mercedes' 2024 P4 finish was the culmination of a multi-year competitive decline:
+
+**2022 ground-effect regulation reset.** F1 introduced new chassis rules in 2022 that prioritized ground-effect aerodynamics. Mercedes' W13 was uncompetitive — Red Bull dominated. Mercedes scored only 1 win in 2022.
+
+**2023 partial recovery.** W14 modest improvement, Mercedes 1 win, P2 Constructors. Competitive but well behind Red Bull.
+
+**2024 plateau and slide.** W15 designed conservatively to "not repeat 2022 mistakes." Result: 4 wins but inconsistent. Behind McLaren (eventual 2024 WCC champion), Ferrari (Hamilton's announced 2025 destination), and Red Bull. Final position P4 Constructors with 468 points.
+
+**Three problems concurrent:**
+1. **Chassis competitiveness.** The 2022-2025 ground-effect cars were not Mercedes' best era.
+2. **Driver pairing transitions.** Hamilton announced for 2025 Ferrari move. Antonelli (junior, never raced F1) was named Russell's 2025 teammate. Driver continuity disrupted.
+3. **2026 development trade-off.** Mercedes was already investing heavily in 2026 power unit development by 2023-2024, accepting reduced 2024 chassis development capacity in exchange.
+
+**The strategic question Mercedes faced in 2024:** Do you treat 2024 P4 as a failure to be reversed, or as a deliberate trade-off justified by 2026 upside? Wolff's public messaging treated it as the latter.`
+      },
+      {
+        type: 'concept',
+        heading: 'The 2024 commercial performance — the central thesis',
+        body: `While competitive performance declined in 2024, commercial performance was at record highs:
+
+- Revenue: £636M (vs £546M in 2023, 16.4% growth)
+- EBIT: £160M (vs ~£114M in 2023)
+- Net profit: £120M (vs £83.8M in 2023, 43.5% growth)
+- Dividend: £125M (matched against £120M net profit — confidence signal)
+
+**This commercial dominance during a competitive downturn is the central thesis of your platform and Mercedes\' capstone narrative.**
+
+Why commercial performance held up despite P4 finish:
+1. **Multi-year sponsorship contracts.** Petronas, INEOS, IWC, Crowdstrike — these were multi-year deals locked in during 2021-2022 strong performance. P4 in 2024 did not trigger immediate sponsorship loss.
+2. **AVE remained high.** $5.7B claimed AVE — global media exposure is roughly position-insensitive once you\'re in the top 4-5.
+3. **Concorde structural payments.** WCC pool distributed across positions; CCB ($33M) paid to top-4 heritage teams (Mercedes qualifies); heritage bonuses provide floor.
+4. **AVE growth from Antonelli storyline.** Italian rookie driver promotion created sponsor interest in the new narrative.
+
+The commercial system did NOT punish Mercedes for 2024 P4. It rewarded the team\'s position regardless. **This decoupling is the structural feature of cost-cap-era F1 economics.**`
+      },
+      {
+        type: 'concept',
+        heading: 'What 2024 commercial dominance funded',
+        body: `The 2024 £120M net profit and £125M dividend were extracted at the same time as substantial investment was happening. Approximately what funded:
+
+**Power unit development.** HPP (separate entity, separate cap) was investing in 2026 PU technology. The 2026 regulations are the largest single-season change since 2014. PU development takes 3-4 years from inception. Mercedes started 2026 PU development around 2022.
+
+**Chassis development.** W17 (2026 car) chassis design and tooling started 2024 calendar year, fed by 2023-2024 wind tunnel and CFD development capacity.
+
+**Driver development pipeline.** Antonelli\'s F1 promotion in 2025 required prior years of Mercedes-funded junior categories (Formula 2, Italian F4, Formula Regional). The team invested in Antonelli\'s training years before he was visible at the F1 level.
+
+**Facility investment.** Brackley factory upgrades, Brixworth (HPP) facility expansions. Capital expenditure during the down period to position for the upside.
+
+**Talent retention and recruitment.** During the 2022-2024 down period, Mercedes retained almost all senior engineering staff — at premium compensation costs. This is unusual; teams typically shed talent during down periods. Mercedes did the opposite.
+
+**The strategic discipline of this investment pattern is exactly what cost-cap-era F1 economics enables.** Commercial revenue grew during the down period; the team used that growth to fund 2026 upside. By 2026, the investments are paying off as competitive results.`
+      },
+      {
+        type: 'concept',
+        heading: 'The 2026 turnaround — what changed',
+        body: `Mercedes\' 2026 season-to-date results (as of post-Miami GP):
+
+- 4 of 4 race wins (Russell Australia, Antonelli China + Japan + Miami)
+- P1 Constructors\' Championship with 180 points
+- 68 points ahead of Ferrari (P2)
+- Antonelli P1 Drivers\' Championship (100 pts), Russell P2 (80 pts)
+- Antonelli became first F1 driver in history to convert his first three consecutive pole positions into wins at the same events (China, Japan, Miami)
+
+**What drove the 2026 turnaround:**
+
+1. **Power unit advantage.** HPP\'s 2026 power unit is estimated 25+hp ahead of Ferrari and ahead of Red Bull-Ford and Honda. This is the largest competitive advantage Mercedes has had since 2014-2020.
+
+2. **Chassis competitiveness.** W17 (2026 chassis) was developed under different rules than the 2022-2025 era — it doesn\'t carry forward the disadvantages of the ground-effect cars.
+
+3. **Driver lineup performing.** Russell as the experienced lead; Antonelli proving capable beyond expectations. The 2024-2025 disruption (Hamilton departure, Antonelli debut) is now competitive depth, not a transition cost.
+
+4. **Operational consistency.** Pit stops, strategy calls, race management — Mercedes has been exceptional in 2026. This is the result of stable senior leadership that wasn\'t shed during the down period.
+
+5. **2024 commercial cash flow paid off.** The investment funded by 2024 dividends and operating profits is now producing competitive results. The thesis is confirmed.
+
+**The 2024-2026 narrative is now Mercedes\' competitive thesis for the Graduate Programme application.** "Mercedes funded 2026 competitive resurgence with 2024 commercial dominance. That is the business model."`
+      },
+      {
+        type: 'think',
+        heading: 'Why this case study matters in your interview',
+        body: `The Mercedes Graduate Programme interview will likely include a question on strategic decision-making during difficult periods. The 2024-2026 case is the perfect answer because:
+
+1. **You can speak to it with primary-source data.** £636M revenue, £120M profit, £125M dividend during P4 finish.
+2. **You can articulate the strategic logic.** Commercial growth funded competitive recovery investment.
+3. **You can connect the financial discipline to the cultural style.** Wolff\'s long-horizon thinking enabled this trade-off; less-financially-disciplined leadership might have cut investment to preserve short-term comfort.
+4. **You can connect to 2026 outcomes.** The strategy worked: P1 Constructors leading, both championships in grasp.
+
+When the interviewer says "how would you approach a difficult competitive period?" you don\'t guess. You walk through the Mercedes 2024-2026 case as evidence of the right approach. That is the level of fluency the Graduate Programme expects.`
+      }
+    ],
+
+    glossary: [
+      { term: 'Ground-effect regulations', definition: 'F1 chassis rules in 2022-2025 prioritizing under-car aerodynamics. Disadvantaged Mercedes; advantaged Red Bull.' },
+      { term: 'W15 / W16 / W17', definition: 'Mercedes chassis names by year. W15 = 2024 (P4 finish). W16 = 2025 (P2). W17 = 2026 (championship-leading).' },
+      { term: 'Commercial-funds-competitive thesis', definition: 'The strategic insight that strong commercial revenue during a competitive downturn can fund the investment needed to return to competitive strength. Central to Mercedes 2024-2026.' }
+    ],
+
+    quiz: [
+      {
+        q: 'Mercedes\' P4 finish in 2024 was the worst Constructors\' finish since 2012. Yet 2024 was also a record-revenue year. What does this signal about F1\'s commercial structure?',
+        options: [
+          'It is random',
+          'F1\'s commercial system is partially decoupled from race-by-race performance. Multi-year sponsorship contracts, Concorde structural payments, and AVE-based exposure metrics provide significant revenue floor regardless of specific season performance.',
+          'Sponsors are irrational',
+          'It is a coincidence'
+        ],
+        correct: 1,
+        explanation: 'F1\'s commercial structure has structural cushioning. Multi-year sponsor contracts, Concorde Championship Bonus and prize money for top teams, AVE-based exposure metrics that don\'t fluctuate with race-by-race results. This decoupling is the structural feature that allowed Mercedes to invest in 2026 power unit development during a competitive downturn.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Was 2024 P4 actually a strategic choice or just a result?",
+        a: "Both, in a sense. Mercedes did not aim to finish P4 — they aimed to be competitive. But the trade-offs made (heavy 2026 PU investment, conservative chassis decisions, talent retention through the down period) reflected a strategic priority for the long-term over short-term comfort. The P4 outcome was the cost of those trade-offs. Wolff has publicly framed it as a deliberate investment cycle."
+      },
+      {
+        q: "Could the 2026 turnaround have happened without the 2024 commercial performance?",
+        a: "Probably not at the same scale. The 2024 £120M net profit, the multi-year retained earnings buildup, and the £125M dividend distribution all signal a financial position that allowed continued investment. A weaker commercial period in 2024 would have forced cost-cutting that would have delayed 2026 capability. The two are linked."
+      },
+      {
+        q: "What would your thesis chapter on the turnaround actually cover?",
+        a: "Sequence: (1) the 2022 regulation reset and Mercedes' early-cycle disadvantage, (2) the commercial decoupling that kept revenue strong despite competitive decline, (3) the deliberate trade-off decisions made by Wolff to invest in 2026 rather than chase short-term competitive results, (4) the 2024 financial picture as evidence of commercial discipline, (5) the 2026 turnaround as confirmation of the strategy. About 4,000-5,000 words is appropriate. This is potentially your strongest chapter for the Mercedes application."
+      }
+    ],
+
+    seeAgain: [
+      { label: 'See Mercedes 2024 financial detail', tab: 'mercedes' },
+      { label: 'See 2026 current status', tab: 'grid' }
+    ]
+  },
+
+  // ==========================================================================
+  // MD-07: The Sponsorship Portfolio
+  // ==========================================================================
+  {
+    id: 'md-07',
+    track: 'md',
+    number: 7,
+    title: 'The Sponsorship Portfolio',
+    duration: 30,
+    prerequisites: ['md-03'],
+    hook: 'Sponsorship is approximately 60% of Mercedes\' revenue. Knowing each tier of sponsor — title, major, technical, cosmetic — and the rough economics of each is essential. By the end of this lesson you will be able to discuss Mercedes\' sponsorship portfolio with the kind of specificity an industry insider would.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The four-tier sponsorship structure',
+        body: `Mercedes\' sponsorship portfolio organizes into four tiers, each with different price points and rights:
+
+**Tier 1 \u2014 Title sponsor (Petronas).** Petronas is Mercedes\' title sponsor — the brand appears in the team name. Decade+ relationship. Petronas (Malaysian state oil and gas company) provides fuel and lubricant technology in addition to title sponsorship. Estimated annual value: $70-100M depending on year and contract terms.
+
+**Tier 2 \u2014 Major partners.** INEOS, IWC, Crowdstrike, Bose, Petronas itself partially. These are visible sponsors with multi-year contracts and sector exclusivity. Annual value range: $20-60M each. INEOS is unusual because it is both a major partner AND a 33.3% owner — structural rather than purely commercial.
+
+**Tier 3 \u2014 Technical partners.** Companies providing products or services in exchange for branding rights. Examples include Pirelli (tires), Mercedes-Benz (engine/chassis components — internal to the team), and various smaller technical providers. Cash value typically lower than Tier 2; value-in-kind exchange is larger component.
+
+**Tier 4 \u2014 Cosmetic partners and minor sponsors.** Smaller logos on the car, helmet, overalls. Annual values $1-10M range. Mercedes has 20+ partners at this tier.
+
+Total sponsorship revenue approximately £382M (60% of 2024 £636M). Across the partnership pyramid, this translates to:
+- Petronas: ~£60-70M
+- INEOS, IWC, Crowdstrike, Bose: ~£200-250M combined
+- Technical partners: ~£40-60M
+- Tier 4: ~£20-30M`
+      },
+      {
+        type: 'concept',
+        heading: 'The Crowdstrike-Kurtz dynamic',
+        body: `Crowdstrike (NASDAQ: CRWD) became a Mercedes sponsor in approximately 2024. The relationship is now structurally unique because of the November 2025 Kurtz personal investment.
+
+**Two layers:**
+- **Commercial layer:** Crowdstrike pays Mercedes for sponsorship rights (cybersecurity branding on team).
+- **Personal investment layer:** Kurtz personally owns ~5% of Mercedes.
+
+These two layers are legally distinct but commercially synergistic. Kurtz\'s personal ownership increases his alignment with team performance. Crowdstrike\'s commercial benefits include increased brand exposure and likely preferred renewal terms.
+
+The 2026 Crowdstrike sponsorship visibility is now higher than 2024-2025 because of Kurtz\'s personal ownership prominence. This is the kind of strategic value the Kurtz transaction delivered beyond capital.`
+      },
+      {
+        type: 'concept',
+        heading: 'Performance triggers and contract structure',
+        body: `F1 sponsorship contracts typically contain performance triggers:
+
+**Championship bonuses:** Major sponsors typically pay 5-15% extra for Constructors or Drivers Championship years. Mercedes\' 2014-2021 dominance period included substantial championship bonuses. The 2026 P1 trajectory should trigger meaningful bonuses across the portfolio.
+
+**Position-based reductions:** Some contracts include reductions if WCC finish falls below specific positions (e.g., reduction if outside top 3). Mercedes\' 2024 P4 likely triggered some position-based reductions in renewal pricing for affected contracts.
+
+**Renegotiation triggers:** Major underperformance can give sponsors right to renegotiate. Rare but exists.
+
+**Exit clauses:** Most contracts are 3-5 year terms with limited mid-term exit rights.
+
+**The 2026 commercial outlook:** With Mercedes leading both championships, performance triggers are activating positively. Bonuses are flowing in; renewals are pricing strong. Your 2026 revenue projection should reflect this — likely £700-750M total revenue.
+
+**Specific sponsor performance trigger examples (illustrative — exact terms confidential):**
+- Petronas: WCC bonus likely 10% of base for title win
+- INEOS: structural ownership stake makes this less performance-triggered
+- Crowdstrike: WCC bonus likely 5-10% of base
+- IWC: WCC bonus likely 5-10% of base`
+      },
+      {
+        type: 'concept',
+        heading: 'Sponsor renewal cycles in 2026-2028',
+        body: `Most Mercedes sponsorship contracts are multi-year (3-5 year terms). The renewal cycle in 2026-2028 is critical:
+
+**2027 renewals (assumed):** Some Tier 2 and Tier 3 contracts expire and require renewal. Mercedes\' 2026 P1 trajectory positions strongly for premium renewal pricing.
+
+**2028 renewals:** Major sponsor contract expiries. Petronas relationship is multi-decade but contracts are renewed periodically.
+
+**2029-2030 cycle:** The longest-term contracts (Petronas, INEOS) renew in this window. Mercedes\' 2026-2029 competitive performance shapes terms.
+
+**For your 2026-2030 DCF model:** Plan sponsorship revenue assuming:
+- 2026: £382M (current trajectory + championship uplift)
+- 2027: £400-420M (3-5% growth)
+- 2028: £420-440M (renewal cycle positive)
+- 2029: £440-460M
+- 2030: £450-470M
+- 2031-onward: dependent on new Concorde period and renewal outcomes`
+      }
+    ],
+
+    glossary: [
+      { term: 'Title sponsor', definition: 'Top-tier sponsor whose brand appears in team name. Mercedes-AMG Petronas Formula 1 Team — Petronas is title sponsor.' },
+      { term: 'Performance trigger', definition: 'Contract clause that activates bonuses or reductions based on competitive results.' },
+      { term: 'AVE', definition: 'Advertising Value Equivalent. Mercedes 2024: ~$5.7B claimed AVE. Used to justify sponsorship pricing.' }
+    ],
+
+    quiz: [
+      {
+        q: 'Approximately what percentage of Mercedes\' 2024 revenue came from sponsorship?',
+        options: ['10%', '30%', '60%', '90%'],
+        correct: 2,
+        explanation: '60% of £636M = £382M from sponsorship. This is the largest single category of revenue. Understanding sponsorship economics is therefore the single most important commercial knowledge for a Mercedes finance role.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Could a major sponsor exit and what would happen?",
+        a: "Theoretically yes — contracts have terms. A major Tier 2 sponsor ($20-60M annual) exiting suddenly would create a 3-10% revenue hole, very manageable for a team Mercedes' size. The harder hit would be reputational: 'Sponsor X left Mercedes' becomes a competitive narrative. Tier 1 (title sponsor) exit would be a different magnitude — Mercedes would replace Petronas if needed (Microsoft, others would be candidates) but would take 1-2 years to re-anchor."
+      },
+      {
+        q: "How does Mercedes find new sponsors?",
+        a: "Two channels: (1) inbound — companies approach Mercedes because of the team's commercial value, especially during championship-leading periods like 2026. (2) outbound — Mercedes' commercial team identifies potential sponsors and pitches them. The outbound process is multi-month: initial pitch, capability presentations, branding mockups, financial negotiation, contract terms. Mercedes' commercial team is approximately 50-80 people focused on sponsorship sales and renewal."
+      },
+      {
+        q: "Are sponsorship contracts confidential?",
+        a: "Yes — the specific dollar values, performance triggers, and exit clauses are confidential. Industry estimates exist (Petronas at $70-100M, INEOS at $20-50M, etc.) but exact terms are not public. The Companies House filing aggregates sponsorship revenue but doesn't disclose per-sponsor breakdowns."
+      }
+    ],
+
+    seeAgain: [{ label: 'See Mercedes sponsorship in Mercedes tab', tab: 'mercedes' }]
+  },
+
+  // ==========================================================================
+  // MD-08: Brackley Operations and the 1,300 Employees
+  // ==========================================================================
+  {
+    id: 'md-08',
+    track: 'md',
+    number: 8,
+    title: 'Brackley Operations and the 1,300 Employees',
+    duration: 25,
+    prerequisites: ['md-03'],
+    hook: 'Mercedes employs approximately 1,289 people at Brackley (the chassis factory) plus another ~1,000 at Brixworth (HPP). Understanding what these people actually do, and where the operating spend goes, gives you context for the financial picture.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The four operational functions at Brackley',
+        body: `Mercedes\' Brackley operations group into four major functions:
+
+**1. Race team (~300 people).** The traveling team that goes to each Grand Prix. Including mechanics, engineers, strategists, hospitality and team management. They travel year-round and represent the visible "race team" public sees.
+
+**2. Engineering and design (~500 people).** Aerodynamicists, performance engineers, race engineers (back at factory between races), software developers, simulator engineers. They design the W17, run simulations, model strategy. Where the competitive edge actually comes from.
+
+**3. Manufacturing (~250 people).** Build the cars. Composite fabrication, machining, assembly. The Brackley factory has substantial manufacturing capacity.
+
+**4. Commercial and support (~250 people).** Sponsorship sales, partnerships, finance, HR, legal, IT, facility management. Where you\'d work in a Mercedes Graduate Programme role.
+
+**Average compensation:** UK F1 team senior engineers earn approximately £80-150K+ depending on role. Senior leadership earns substantially more (Wolff\'s compensation is undisclosed but estimated $10-15M+ annually). The £476M total operating cost base reflects approximately 50-60% in personnel costs.`
+      },
+      {
+        type: 'concept',
+        heading: 'What the £476M operating cost actually buys',
+        body: `Approximate Mercedes 2024 operating cost composition:
+
+- Personnel costs: ~£250-300M (52-63%)
+- Manufacturing and materials: ~£60-80M (12-17%)
+- Race operations (freight, travel, accommodation): ~£40-60M
+- Engineering and IT: ~£40-50M
+- Facility and equipment: ~£30-40M
+- Marketing and brand: ~£20-30M (excluded from cap)
+- Other (legal, finance, governance): ~£20-30M
+
+**Of this ~£476M, only a subset falls within the FIA Section D cap of ~$215M (~£167M).** The cap excludes marketing, certain employee benefits, driver salaries (currently), heritage activities, finance costs, taxes, certain insurance, and litigation costs. So Mercedes operates £476M of total spending while complying with a cap of ~£167M — the difference is in exclusions.
+
+When you analyze Mercedes\' costs as a finance analyst, you\'ll need to distinguish capped from excluded spending. This is one of the most important daily classification tasks in F1 finance work.`
+      }
+    ],
+
+    glossary: [
+      { term: 'Brackley', definition: 'Mercedes F1 factory in Northamptonshire, UK. Where chassis is designed and built. Approximately 1,289 employees in 2024.' },
+      { term: 'Race team', definition: 'Travelling staff that operates at each Grand Prix. ~300 people across mechanics, engineers, strategists, hospitality.' }
+    ],
+
+    quiz: [
+      {
+        q: 'Mercedes operates approximately £476M of total operating cost annually. Approximately what portion falls within the FIA Section D cost cap?',
+        options: ['100%', 'About 35-40% (the capped subset; rest is excluded categories)', '10%', '90%'],
+        correct: 1,
+        explanation: 'The cap of ~$215M (~£167M) represents approximately 35-40% of total operating cost. The remainder is excluded categories: marketing, certain employee benefits, finance costs, taxes, hospitality, etc. Understanding which costs are capped vs excluded is essential daily knowledge for F1 finance roles.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "What would I actually do day-to-day in a Mercedes Finance Graduate role?",
+        a: "Rotate through FP&A, management accounting, commercial finance, and cost cap compliance over the 2-year programme. Daily work would include: financial analyses for specific projects, sponsor contract reviews, cap classification decisions, monthly close support, scenario analyses, and supporting senior staff on specific deliverables. The first 6-12 months are heavy on absorption and capability-building; the second year you take on increasing independent ownership."
+      },
+      {
+        q: "Is Brackley a nice place to work?",
+        a: "It is widely considered one of the best motorsport workplaces. Modern facility, well-resourced, professional culture. The team genuinely supports career development. Compensation is competitive. Commute requires either Brackley-area residence or 60+ minute London commute. Salary differentials reflect this practical constraint."
+      },
+      {
+        q: "What is the cost cap compliance workload like?",
+        a: "Substantial during quarterly reporting periods, lighter between. The cap requires classification of each significant cost as 'in scope' or 'excluded' per Section D Article 4-5 criteria. Mercedes employs ~3-5 full-time cost cap accountants whose entire job is compliance. As a junior analyst you'd support audit responses, classification questions, and quarterly submission preparation."
+      }
+    ],
+
+    seeAgain: [{ label: 'See operational detail in Mercedes tab', tab: 'mercedes' }]
+  },
+
+  // ==========================================================================
+  // MD-09: Mercedes Customer Supply Strategy
+  // ==========================================================================
+  {
+    id: 'md-09',
+    track: 'md',
+    number: 9,
+    title: 'Mercedes Customer Engine Supply Strategy',
+    duration: 25,
+    prerequisites: ['md-02'],
+    hook: 'Mercedes HPP supplies three customer teams for 2026: McLaren, Williams, Alpine. The economics, strategy, and politics of customer supply are nuanced. This lesson is your fluency on customer supply decisions.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The 2026 customer roster',
+        body: `Mercedes HPP customer relationships for 2026:
+
+**McLaren (long-standing, since 1995 with brief Honda interlude).** McLaren and Mercedes have a relationship dating to 1995 when Mercedes-AMG-McLaren engine partnership began. McLaren tried Honda 2015-2017 (works arrangement that didn\'t deliver), returned to Mercedes 2021. For 2026, McLaren remains a Mercedes customer.
+
+**Williams (since 2014).** Williams chose Mercedes power units in 2014 when the V6 hybrid era began. They have remained Mercedes customers continuously. 2026 represents continued relationship.
+
+**Alpine (new for 2026).** Alpine\'s switch from Renault PU to Mercedes was driven by Renault\'s 2024 decision to exit PU manufacturing. Renault\'s exit forced Alpine to find a new supplier; Mercedes was the strategic choice.
+
+**Aston Martin (departed).** Aston Martin was Mercedes\' customer through 2025. They transitioned to Honda HRC works partnership for 2026 — choosing works status over customer status, accepting performance uncertainty in exchange for partnership benefits.
+
+**Net: 4 customers in 2025 → 3 customers in 2026 (Alpine in, Aston out).**`
+      },
+      {
+        type: 'concept',
+        heading: 'The strategic logic of continued customer supply',
+        body: `As covered in MD-02, the $15M FIA-capped customer price is below true marginal cost. HPP subsidizes customers. Why continue?
+
+Strategic benefits (detailed in MD-02):
+- Validation data from customer running
+- Competitive intelligence
+- Concorde voting allies
+- Increased Mercedes-branded PU visibility on grid
+
+**The Wolff concern (December 2025 public statement):** Wolff has questioned whether benefits justify continued subsidy. The reasons:
+1. **Cost cap pressure on HPP.** Section E cap of $130M constrains HPP spending. Customer subsidies effectively consume capacity that could be invested in works team competitive advantage.
+2. **Competitive risk.** Customer teams running similar PUs reduce HPP\'s competitive differentiation. If Mercedes\' PU is the benchmark, supplying customers spreads that benchmark advantage.
+3. **Strategic alignment.** Some customers (e.g., Alpine\'s ambitions) may be less aligned with Mercedes\' commercial interests over time.
+
+**The Wolff position is signal, not commitment.** Mercedes continues 2026 supply. The 2031+ Concorde period might see reduced supply commitments. Track this through your Scenario Register.`
+      },
+      {
+        type: 'concept',
+        heading: 'How customer relationships are structured',
+        body: `Customer engine supply contracts include:
+
+**Technical:** Engine specification, performance level agreements (consumer parity with works team), parts and consumables.
+**Commercial:** $15M annual fee (FIA-capped), additional services charges, branding visibility.
+**Reporting:** Customer reports to Mercedes on engine usage, reliability, performance data. This is the validation data Mercedes uses to improve.
+**Restrictions:** Customers may not use Mercedes PU intelligence for chassis-on-PU performance optimization in ways that disadvantage Mercedes works team.
+
+**For your finance role:** Customer supply involves financial planning (cap allocation, transfer pricing), commercial negotiation (multi-year contract terms), and operational support (deliveries, technical support visits to customer factories).`
+      }
+    ],
+
+    glossary: [
+      { term: 'Customer team', definition: 'Team buying engines from PU manufacturer at FIA-capped $15M/season.' },
+      { term: 'Works partnership', definition: 'Team that is integrated with PU manufacturer (Mercedes + HPP; Aston Martin + Honda HRC for 2026).' }
+    ],
+
+    quiz: [
+      {
+        q: 'Why did Aston Martin leave Mercedes as customer for 2026?',
+        options: [
+          'Performance complaints',
+          'Honda HRC works partnership: Aston Martin chose works status with Honda over customer status with Mercedes, accepting performance uncertainty for partnership benefits',
+          'Cost increase',
+          'Random choice'
+        ],
+        correct: 1,
+        explanation: 'Aston Martin\'s 2026 transition to Honda HRC was a works-status decision. Works partnerships provide certain governance benefits (engineering input, marketing alignment) that customer status doesn\'t. The trade-off was performance uncertainty (Honda is a returning manufacturer in 2026) for partnership benefits.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "Could Mercedes simply refuse to supply customers?",
+        a: "Yes structurally, but it would be controversial. FIA Section E allows up to two customer relationships per manufacturer; customers must be agreed by both parties. Mercedes is not obligated to continue supplying any specific customer at the end of a contract. The 2031+ Concorde period is the realistic decision window. Wolff has signaled this is a consideration."
+      },
+      {
+        q: "Do the customer teams know they're being subsidized?",
+        a: "Yes — this is widely understood in F1 finance. The $15M cap is publicly known; the true marginal cost of supply is industry-known. Customer teams accept the subsidized supply because no alternative is cheaper. They reciprocate through Concorde alignment and operational cooperation."
+      }
+    ],
+
+    seeAgain: [{ label: 'See HPP customer detail', tab: 'mercedes' }]
+  },
+
+  // ==========================================================================
+  // MD-10: The 2031+ Strategic Outlook — Track 3 Capstone
+  // ==========================================================================
+  {
+    id: 'md-10',
+    track: 'md',
+    number: 10,
+    title: 'The 2031+ Strategic Outlook \u2014 Track 3 Capstone',
+    duration: 35,
+    prerequisites: ['md-09'],
+    hook: 'By 2031 the 2026-2030 Concorde period ends and a new regulatory cycle begins. The decisions made between now and 2030 shape Mercedes\' position for the decade after. This capstone lesson synthesizes everything you have learned in Track 3 against the strategic outlook your future Mercedes role will be navigating.',
+
+    sections: [
+      {
+        type: 'concept',
+        heading: 'The 2031+ landscape that\'s coming',
+        body: `Five major shifts are likely or signaled for 2031+:
+
+**1. Concorde renegotiation (2027-2029 window).** The 2026-2030 Concorde expires. Negotiations begin 2027-2028. Major issues:
+- Cost cap level (current $215M for 2026; inflation adjustments mean ~$230-240M by 2030)
+- Prize money pool size and distribution (Ferrari\'s LST is the perpetual flashpoint)
+- CCB four-team list (Ferrari, Mercedes, Red Bull, McLaren — could expand or contract)
+- New manufacturer commitments (Audi continuation? Honda extension? GM works for Cadillac?)
+
+**2. 2031+ regulatory technical reset.** The 2026 PU formula was designed to last 2026-2030. The next reset is likely. Wolff has signaled support for V8 + electric boost (~1,200 hp) for 2030-2031. FIA President Ben Sulayem has hinted at naturally aspirated direction. The technical framework that Mercedes is dominating in 2026 may not exist by 2031.
+
+**3. Mercedes-Benz Group AG strategy evolution.** Mercedes-Benz\'s EV strategy continues evolving. F1 commitment continues but the parent company\'s priorities (Mercedes-EQ growth, China market positioning, sustainability targets) may shift the resource allocation to F1 over time.
+
+**4. Wolff succession.** A 3-year horizon scenario (your Scenario Register tracking) gives 20-35% probability of meaningful succession. By 2030 Wolff would be 58. Continued through your career timeline is plausible; departure is possible.
+
+**5. Grid expansion (Cadillac as test case).** Cadillac\'s 2026 entry will inform future expansion considerations. A 12th or 13th team is possible but constrained by anti-dilution mechanics. Audi-style new manufacturer commitments are more likely than entirely new teams.`
+      },
+      {
+        type: 'concept',
+        heading: 'Mercedes\' 2031+ strategic positioning',
+        body: `Mercedes enters the 2030-2031 transition from a strong position:
+
+**Strengths:**
+- Two-time Constructors\' Champion in 2026-2030 horizon (assuming continued performance)
+- Strong commercial base ($700-800M+ revenue base)
+- Three-stakeholder ownership stability
+- HPP technical capability
+- Antonelli locked as long-term driver, Russell as senior anchor
+- Cash position robust
+
+**Risks:**
+- ADUO performance balancing could erode 2026-onward advantage
+- New regulations could disadvantage Mercedes\' electrification strengths
+- Mercedes-Benz Group EV/sustainability strategy could shift F1 priority
+- Wolff succession potential
+
+**Decision points for 2031+:**
+
+a) **Driver lineup:** Russell\'s next contract (likely through 2028 already, then a new contract). Antonelli\'s extended development.
+
+b) **Sponsor portfolio renewal cycle:** Major sponsors renewing in 2028-2030 window.
+
+c) **Customer supply continuation or reduction:** Wolff-stated concern about $15M cap subsidies suggests possible 2031+ reduction.
+
+d) **HPP investment level:** New regulations may require new PU architecture — significant R&D budget allocation needed.
+
+e) **Ownership structure stability:** Continuing four-stakeholder (with Kurtz) vs additional partial-stake transactions vs status quo.`
+      },
+      {
+        type: 'concept',
+        heading: 'Your role in this strategic landscape',
+        body: `As a Mercedes Finance Graduate joining in Fall 2030, you arrive at a transition moment. The 2026-2030 dominant era ends; the 2031+ era begins. Your work over the first 5-10 years (2030-2040, roughly) coincides with:
+
+- 2031+ Concorde implementation
+- New PU regulations adoption
+- Possible Wolff succession
+- Sponsor portfolio renewal
+- HPP customer supply restructuring
+- Continued competitive performance pressure
+
+This is a critical period for Mercedes commercial finance. Your role would be central to:
+- Financial modeling for 2031+ regulatory scenarios
+- Sponsor contract renewal analysis
+- HPP economic decision support
+- Cost cap compliance during regulatory transitions
+- Capital allocation decisions across team and HPP
+
+By 2035-2040, you could be in senior finance leadership — Head of Finance or similar — directly involved in shaping Mercedes\' next strategic era.
+
+**This is why the Mercedes Graduate Programme is your direct path to long-term influence.** Joining as a junior analyst in 2030 puts you on the ground for the strategic transitions that define Mercedes\' next decade.`
+      },
+      {
+        type: 'think',
+        heading: 'Synthesizing Track 3',
+        body: `By completing Track 3, you now understand:
+- The three-entity ownership structure (MD-01)
+- HPP as separate but integrated platform component (MD-02)
+- The 2024 financial filing line-by-line (MD-03)
+- Toto Wolff\'s decision patterns (MD-04)
+- The Kurtz transaction and $6B valuation benchmark (MD-05)
+- The 2024-2026 commercial-funds-competitive turnaround (MD-06)
+- The sponsorship portfolio structure (MD-07)
+- Brackley operations and cost composition (MD-08)
+- Customer supply strategy (MD-09)
+- 2031+ strategic positioning (this lesson)
+
+This is the depth a Mercedes Finance Graduate is expected to have. You have built it through structured, primary-source-grounded study.
+
+Your next steps:
+- Track 4 (Applied Analysis) — practice DCF, scenario, regulation interpretation
+- Track 5 (Applied Reading) — additional line-by-line filings (Ferrari 20-F, Mercedes-Benz Group 10-K equivalents)
+- Continue Companies House filing tracking (2025 Mercedes accounts file ~June 2026)
+- Continue weekly news tracking
+
+You are positioned. The Graduate Programme application in Fall 2029 will be the visible step; the work between now and then is the foundation.`
+      }
+    ],
+
+    glossary: [
+      { term: '2031+ Concorde', definition: 'Next Concorde Agreement period (2031-2035). Negotiations begin ~2027-2028.' },
+      { term: 'V8 + electric boost', definition: 'Wolff\'s publicly supported direction for 2030-2031 regulatory reset. Approximately 1,200hp combined.' }
+    ],
+
+    quiz: [
+      {
+        q: 'What is the single most important regulatory transition affecting Mercedes\' 2031+ strategic position?',
+        options: [
+          'Cost cap level',
+          'Power unit regulation reset (likely shifting toward V8 + electric boost or naturally aspirated, fundamentally changing the competitive landscape that Mercedes currently dominates)',
+          'Driver salary cap',
+          'Calendar expansion'
+        ],
+        correct: 1,
+        explanation: 'The PU regulation reset is the largest single competitive lever. Mercedes\' 2026 dominance is built on the 2026 power unit formula. A 2031+ reset could either solidify Mercedes\' advantage (if rules continue to favor electrification expertise) or erode it (if rules shift toward different technical architecture). This is the variable that most matters for 2031+ positioning.'
+      }
+    ],
+
+    qa: [
+      {
+        q: "What's the realistic 2030 financial picture for Mercedes?",
+        a: "Plausible base case: revenue £900M-1.0B, EBIT £250-300M, net profit £200-230M, dividend £180-220M. Team valuation $7-9B (continued growth from 2025 $6B baseline). Ownership structure likely four-stakeholder (Wolff/Mercedes-Benz/INEOS/Kurtz) with possibly additional partial stakes by 2030. These projections build on the trajectory and assume continued 2026-2030 strong performance."
+      },
+      {
+        q: "How prepared will I actually be by 2030 to enter Mercedes Finance?",
+        a: "If you complete the platform's classroom (FF, F1, MD, AA, AR tracks), the Companies House filing tracking, weekly news routine, DCF model maintenance, and the Northwood Finance BBA/MBA with internships — you will be in the top ~5% of Mercedes Graduate Programme applicants. You will know things candidates from generalist business schools don't. The Wolff-style fluency you will have developed (financial discipline, calibrated communication, primary-source rigor) maps directly to Mercedes' cultural style."
+      },
+      {
+        q: "What's the realistic timeline to senior finance roles at Mercedes?",
+        a: "Graduate Programme 2030-2032 (2 years). Senior Analyst 2032-2035. Manager 2035-2038. Director / Head of Finance 2038-2042 (would be approximately age 32-36). C-suite (CFO equivalent) 2042+ (age 36+). This is an aggressive but plausible trajectory for someone with your preparation. Your platform's deliverables are the evidence-set that could accelerate this."
+      }
+    ],
+
+    seeAgain: [
+      { label: 'See Mercedes 2031+ scenarios', tab: 'scenarios' },
+      { label: 'See full platform map', tab: 'classroom' }
+    ]
+  }
+];
+
+LESSONS_MD.push(...LESSONS_MD_PART2);
+
+// Add Track 3 lessons to ALL_LESSONS
+if (typeof ALL_LESSONS !== 'undefined') {
+  ALL_LESSONS.push(...LESSONS_MD);
+}
+
+
+// ===== 18_question_queue.js =====
+// ============================================================================
+// V21 QUESTION QUEUE — AI tutor hybrid Option 3 component
+// ============================================================================
+// Saves questions to localStorage. User exports to clipboard, pastes into chat
+// with Claude, Claude answers in conversation, user imports answers back.
+// Works on GitHub Pages forever — no API dependencies.
+// ============================================================================
+
+function QuestionQueue() {
+  const [queue, setQueue] = useState([]);
+  const [importMode, setImportMode] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [activeQuestion, setActiveQuestion] = useState(null);
+  const [copyConfirm, setCopyConfirm] = useState(false);
+
+  // Load queue from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('v21_question_queue');
+      if (stored) setQueue(JSON.parse(stored));
+    } catch (e) { console.error(e); }
+  }, []);
+
+  const saveQueue = (newQueue) => {
+    setQueue(newQueue);
+    try {
+      localStorage.setItem('v21_question_queue', JSON.stringify(newQueue));
+    } catch (e) { console.error(e); }
+  };
+
+  const exportToClipboard = () => {
+    const unanswered = queue.filter(q => !q.answered);
+    if (unanswered.length === 0) {
+      alert('No unanswered questions to export.');
+      return;
+    }
+    const text = unanswered.map((q, i) =>
+      `[Q${i+1}] (from lesson ${q.lessonId}: "${q.lessonTitle}")\n${q.question}`
+    ).join('\n\n---\n\n');
+    const wrapped = `I have ${unanswered.length} question(s) from my Mercedes-AMG Petronas C-Suite platform that I'd like you to answer:\n\n${text}\n\nFor each, please respond with [A1], [A2], etc. so I can import answers back.`;
+    navigator.clipboard.writeText(wrapped).then(() => {
+      setCopyConfirm(true);
+      setTimeout(() => setCopyConfirm(false), 3000);
+    }).catch(e => alert('Copy failed: ' + e.message));
+  };
+
+  const importAnswers = () => {
+    if (!importText.trim()) return;
+    // Parse [A1] ... [A2] ... pattern
+    const answerPattern = /\[A(\d+)\]([\s\S]*?)(?=\[A\d+\]|$)/g;
+    const matches = [...importText.matchAll(answerPattern)];
+    if (matches.length === 0) {
+      alert('No [A1], [A2] markers found. Paste Claude\'s response with the markers intact.');
+      return;
+    }
+    const unanswered = queue.filter(q => !q.answered);
+    let updatedCount = 0;
+    const newQueue = [...queue];
+    matches.forEach(m => {
+      const idx = parseInt(m[1]) - 1;
+      const answer = m[2].trim();
+      if (idx >= 0 && idx < unanswered.length) {
+        const qToUpdate = unanswered[idx];
+        const qIdx = newQueue.findIndex(q => q.id === qToUpdate.id);
+        if (qIdx >= 0) {
+          newQueue[qIdx] = { ...newQueue[qIdx], answer, answered: true, answeredAt: new Date().toISOString() };
+          updatedCount++;
+        }
+      }
+    });
+    saveQueue(newQueue);
+    setImportText('');
+    setImportMode(false);
+    alert(`Imported ${updatedCount} answer(s).`);
+  };
+
+  const deleteQuestion = (id) => {
+    if (!confirm('Delete this question?')) return;
+    saveQueue(queue.filter(q => q.id !== id));
+    if (activeQuestion && activeQuestion.id === id) setActiveQuestion(null);
+  };
+
+  const clearAnswered = () => {
+    if (!confirm('Clear all answered questions? They will be removed permanently.')) return;
+    saveQueue(queue.filter(q => !q.answered));
+    setActiveQuestion(null);
+  };
+
+  const unansweredCount = queue.filter(q => !q.answered).length;
+  const answeredCount = queue.filter(q => q.answered).length;
+
+  return React.createElement('div', { className: 'max-w-6xl mx-auto px-6 py-8' },
+    React.createElement('div', { className: 'mb-6' },
+      React.createElement('h1', { className: 'text-2xl font-bold text-slate-100 mb-2' }, 'Question Queue'),
+      React.createElement('p', { className: 'text-sm text-slate-400 leading-relaxed' },
+        'Your saved questions from lessons. Export unanswered questions to clipboard, paste into a Claude chat, then import answers back here. Answered questions stay tied to their lesson for future reference.')
+    ),
+
+    // Stats bar
+    React.createElement('div', { className: 'flex items-center gap-4 mb-6' },
+      React.createElement('div', { className: 'flex-1 grid grid-cols-3 gap-4' },
+        React.createElement('div', { className: 'bg-slate-900/40 border border-slate-800 rounded-lg p-3' },
+          React.createElement('div', { className: 'text-xs text-slate-400 uppercase tracking-wider' }, 'Total'),
+          React.createElement('div', { className: 'text-2xl font-bold text-slate-100 mt-1' }, queue.length)
+        ),
+        React.createElement('div', { className: 'bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg p-3' },
+          React.createElement('div', { className: 'text-xs text-fuchsia-300 uppercase tracking-wider' }, 'Unanswered'),
+          React.createElement('div', { className: 'text-2xl font-bold text-fuchsia-300 mt-1' }, unansweredCount)
+        ),
+        React.createElement('div', { className: 'bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3' },
+          React.createElement('div', { className: 'text-xs text-emerald-300 uppercase tracking-wider' }, 'Answered'),
+          React.createElement('div', { className: 'text-2xl font-bold text-emerald-300 mt-1' }, answeredCount)
+        )
+      )
+    ),
+
+    // Action buttons
+    React.createElement('div', { className: 'flex flex-wrap gap-3 mb-6' },
+      React.createElement('button', {
+        onClick: exportToClipboard,
+        disabled: unansweredCount === 0,
+        className: 'px-4 py-2 bg-fuchsia-500 hover:bg-fuchsia-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 text-sm font-semibold rounded'
+      }, copyConfirm ? '✓ Copied to clipboard' : 'Export ' + unansweredCount + ' question(s) to clipboard'),
+      React.createElement('button', {
+        onClick: () => setImportMode(!importMode),
+        className: 'px-4 py-2 bg-violet-500 hover:bg-violet-400 text-slate-950 text-sm font-semibold rounded'
+      }, importMode ? 'Cancel import' : 'Import answers from Claude'),
+      answeredCount > 0 && React.createElement('button', {
+        onClick: clearAnswered,
+        className: 'px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded ml-auto'
+      }, 'Clear all answered')
+    ),
+
+    // Import textarea
+    importMode && React.createElement('div', { className: 'mb-6 bg-slate-900/40 border border-violet-500/20 rounded-lg p-4' },
+      React.createElement('div', { className: 'text-sm text-slate-300 mb-3' },
+        'Paste Claude\'s response below. Make sure the [A1], [A2] markers are intact \u2014 they tell the system which answer belongs to which question.'),
+      React.createElement('textarea', {
+        value: importText,
+        onChange: (e) => setImportText(e.target.value),
+        placeholder: 'Paste Claude\'s response with [A1], [A2], etc. markers...',
+        rows: 8,
+        className: 'w-full p-3 bg-slate-950 border border-slate-700 rounded text-sm text-slate-200 placeholder-slate-500 resize-y font-mono'
+      }),
+      React.createElement('button', {
+        onClick: importAnswers,
+        disabled: !importText.trim(),
+        className: 'mt-3 px-4 py-2 bg-violet-500 hover:bg-violet-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 text-sm font-semibold rounded'
+      }, 'Import answers')
+    ),
+
+    // Question list
+    queue.length === 0 ?
+      React.createElement('div', { className: 'text-center py-12 text-slate-500' },
+        React.createElement('div', { className: 'text-lg mb-2' }, 'No questions yet'),
+        React.createElement('div', { className: 'text-sm' }, 'Use the "Ask Claude" button inside any lesson to add a question here.')
+      ) :
+      React.createElement('div', { className: 'space-y-3' },
+        ...queue.slice().reverse().map(item =>
+          React.createElement('div', {
+            key: item.id,
+            className: 'bg-slate-900/40 border ' +
+              (item.answered ? 'border-emerald-500/30' : 'border-fuchsia-500/30') +
+              ' rounded-lg p-4'
+          },
+            React.createElement('div', { className: 'flex items-start justify-between gap-4 mb-2' },
+              React.createElement('div', { className: 'flex-1' },
+                React.createElement('div', { className: 'flex items-center gap-2 mb-1' },
+                  React.createElement('span', {
+                    className: 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ' +
+                      (item.answered ? 'bg-emerald-500/20 text-emerald-300' : 'bg-fuchsia-500/20 text-fuchsia-300')
+                  }, item.answered ? 'Answered' : 'Unanswered'),
+                  React.createElement('span', { className: 'text-xs text-slate-500' },
+                    'From ' + item.lessonId + ': ' + item.lessonTitle)
+                ),
+                React.createElement('div', { className: 'text-sm font-semibold text-slate-200 mt-2' },
+                  'Q: ' + item.question)
+              ),
+              React.createElement('button', {
+                onClick: () => deleteQuestion(item.id),
+                className: 'text-xs text-slate-500 hover:text-rose-400 px-2 py-1'
+              }, '×')
+            ),
+            item.answered && item.answer && React.createElement('div', {
+              className: 'mt-3 pl-3 border-l-2 border-emerald-500/40 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap'
+            }, item.answer),
+            React.createElement('div', { className: 'text-[10px] text-slate-500 mt-3' },
+              'Asked ' + new Date(item.createdAt).toLocaleString() +
+              (item.answeredAt ? ' \u2022 Answered ' + new Date(item.answeredAt).toLocaleString() : ''))
+          )
+        )
+      )
+  );
 }
 
 
